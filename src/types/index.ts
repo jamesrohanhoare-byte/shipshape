@@ -1,0 +1,96 @@
+export type Role = 'captain' | 'manager' | 'deckhand' | 'engineer'
+
+export type ThemeMode = 'light' | 'dark' | 'auto'
+
+export interface Boat {
+  id: string
+  name: string
+  slug: string
+  logo_url: string | null
+  accent_color: string | null
+  theme_mode: ThemeMode | null
+  created_at: string
+}
+
+export interface Profile {
+  id: string
+  boat_id: string
+  email: string
+  full_name: string
+  role: Role
+  created_at: string
+}
+
+export interface Unit {
+  id: string
+  boat_id: string
+  name: string
+  abbreviation: string
+}
+
+export interface Category {
+  id: string
+  boat_id: string
+  name: string
+}
+
+export interface Item {
+  id: string
+  boat_id: string
+  name: string
+  category_id: string | null
+  unit_id: string | null
+  price_per_unit: number
+  par_level: number
+  current_quantity: number
+  location: string | null
+  photo_url: string | null
+  created_at: string
+  // joined (optional) — populated by select with foreign tables
+  unit?: Unit | null
+  category?: Category | null
+}
+
+export type MovementType = 'add' | 'deduct' | 'adjust' | 'stocktake'
+
+export interface StockMovement {
+  id: string
+  boat_id: string
+  item_id: string
+  user_id: string | null
+  change_qty: number
+  type: MovementType
+  note: string | null
+  created_at: string
+}
+
+export type TaskStatus = 'open' | 'in_progress' | 'done'
+
+export interface Task {
+  id: string
+  boat_id: string
+  title: string
+  description: string | null
+  assigned_to: string | null
+  status: TaskStatus
+  due_date: string | null
+  created_by: string | null
+  created_at: string
+}
+
+export interface SleepLog {
+  id: string
+  boat_id: string
+  user_id: string
+  log_date: string
+  sleep_start: string | null
+  sleep_end: string | null
+  hours: number
+  note: string | null
+  created_at: string
+}
+
+export interface MyContext {
+  profile: Profile
+  boat: Boat
+}
