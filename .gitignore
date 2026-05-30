@@ -11,3 +11,7 @@ dist-ssr
 node_modules/.tmp
 
 .vercel
+
+# Supabase CLI scratch
+supabase/.temp
+.branches
