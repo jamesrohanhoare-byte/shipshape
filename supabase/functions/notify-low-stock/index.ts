@@ -54,44 +54,35 @@ Deno.serve(async (req) => {
 
     const unit = (item as { units?: { abbreviation?: string } }).units?.abbreviation ?? ''
     const qty = Number(item.current_quantity)
+    const message = `${item.name} is low — ${qty} ${unit} left (par ${item.par_level})`
 
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${restKey}` },
-      body: JSON.stringify({
-        app_id: appId,
-        headings: { en: 'Low stock' },
-        contents: { en: `${item.name} is low — ${qty} ${unit} left (par ${item.par_level})` },
-        // Target captains & managers of this boat only
-        filters: [
-          { field: 'tag', key: 'boat_id', relation: '=', value: caller.boat_id },
-          { operator: 'AND' },
-          { field: 'tag', key: 'role', relation: '=', value: 'captain' },
-        ],
-        // OneSignal OR-group for manager via a second notification is simpler; we
-        // instead send to both roles using the include of two filter groups:
-        // (handled by sending a second request below if needed)
-      }),
-    })
+    // New-format keys (os_v2_...) use `Key` auth on api.onesignal.com; legacy
+    // keys use `Basic`. Auto-detect so either works.
+    const authHeader = restKey.startsWith('os_v2_') ? `Key ${restKey}` : `Basic ${restKey}`
 
-    // Second send for managers (OneSignal AND/OR grouping for two role values is
-    // fiddly; a second targeted send is the most reliable cross-version approach)
-    await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${restKey}` },
-      body: JSON.stringify({
-        app_id: appId,
-        headings: { en: 'Low stock' },
-        contents: { en: `${item.name} is low — ${qty} ${unit} left (par ${item.par_level})` },
-        filters: [
-          { field: 'tag', key: 'boat_id', relation: '=', value: caller.boat_id },
-          { operator: 'AND' },
-          { field: 'tag', key: 'role', relation: '=', value: 'manager' },
-        ],
-      }),
-    })
+    // One targeted send per role. Each filter is (boat_id AND role) — kept as
+    // separate requests because OneSignal evaluates filters left-to-right with no
+    // grouping, so a combined OR would leak to other boats.
+    const statuses: number[] = []
+    for (const role of ['captain', 'manager']) {
+      const r = await fetch('https://api.onesignal.com/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+        body: JSON.stringify({
+          app_id: appId,
+          headings: { en: 'Low stock' },
+          contents: { en: message },
+          filters: [
+            { field: 'tag', key: 'boat_id', relation: '=', value: caller.boat_id },
+            { operator: 'AND' },
+            { field: 'tag', key: 'role', relation: '=', value: role },
+          ],
+        }),
+      })
+      statuses.push(r.status)
+    }
 
-    return json({ ok: true, status: res.status })
+    return json({ ok: true, statuses })
   } catch (e) {
     return json({ error: String(e) }, 500)
   }

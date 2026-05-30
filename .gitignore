@@ -9,3 +9,5 @@ dist-ssr
 *.log
 .vercel
 node_modules/.tmp
+
+.vercel
