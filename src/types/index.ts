@@ -20,6 +20,7 @@ export interface Profile {
   email: string
   full_name: string
   role: Role
+  onboarded: boolean
   created_at: string
 }
 

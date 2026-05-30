@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Upload, Bell, BellRing, BellOff, Smartphone, Share, Plus, Trash2, Check,
-  Users, ChevronRight, LogOut, Palette, X,
+  Users, ChevronRight, LogOut, Palette, X, Compass,
 } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import { supabase } from '@/lib/supabase'
@@ -75,6 +75,12 @@ function GeneralTab() {
     setSaved(true); setTimeout(() => setSaved(false), 1500)
   }
 
+  async function replayTour() {
+    if (!profile) return
+    await supabase.from('profiles').update({ onboarded: false }).eq('id', profile.id)
+    await refresh()
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div>
@@ -86,15 +92,20 @@ function GeneralTab() {
         <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', marginTop: 6 }}>{profile?.email}</div>
       </div>
 
-      {profile && canManageCrew(profile.role) && (
-        <button className="list-group" onClick={() => navigate('/crew')} style={{ width: '100%' }}>
-          <div className="list-row">
+      <div className="list-group" style={{ width: '100%' }}>
+        {profile && canManageCrew(profile.role) && (
+          <button className="list-row" onClick={() => navigate('/crew')}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--color-accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={18} style={{ color: 'var(--color-accent)' }} /></div>
             <div style={{ flex: 1, fontWeight: 600 }}>Manage crew</div>
             <ChevronRight size={18} style={{ color: 'var(--color-text-faint)' }} />
-          </div>
+          </button>
+        )}
+        <button className="list-row" onClick={replayTour}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: 'var(--color-accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Compass size={18} style={{ color: 'var(--color-accent)' }} /></div>
+          <div style={{ flex: 1, fontWeight: 600 }}>Replay walkthrough</div>
+          <ChevronRight size={18} style={{ color: 'var(--color-text-faint)' }} />
         </button>
-      )}
+      </div>
 
       <button className="btn btn-danger btn-block" onClick={signOut}><LogOut size={17} /> Sign out</button>
     </div>

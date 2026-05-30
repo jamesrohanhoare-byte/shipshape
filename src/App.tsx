@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/context/AuthContext'
+import { supabase } from '@/lib/supabase'
 import Layout from '@/components/Layout'
 import InstallPrompt from '@/components/InstallPrompt'
 import OneSignalInit from '@/components/OneSignalInit'
 import SplashLoader from '@/components/SplashLoader'
+import Onboarding from '@/components/Onboarding'
 
 import Auth from '@/pages/Auth'
 import Home from '@/pages/Home'
@@ -16,17 +18,24 @@ import Reports from '@/pages/Reports'
 import Sleep from '@/pages/Sleep'
 
 function Gate() {
-  const { session, profile, loading } = useAuth()
+  const { session, profile, loading, refresh } = useAuth()
 
   if (loading) return <SplashLoader />
   if (!session) return <Auth />
   // Signed in but no profile yet (mid-provision / orphaned) — Auth handles boat setup
   if (!profile) return <Auth />
 
+  async function finishOnboarding() {
+    if (!profile) return
+    await supabase.from('profiles').update({ onboarded: true }).eq('id', profile.id)
+    await refresh()
+  }
+
   return (
     <>
       <OneSignalInit />
-      <InstallPrompt />
+      {profile.onboarded && <InstallPrompt />}
+      {!profile.onboarded && <Onboarding onFinish={finishOnboarding} />}
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
