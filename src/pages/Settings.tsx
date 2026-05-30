@@ -13,6 +13,7 @@ import { canEditBoatSettings, canManageCrew } from '@/lib/permissions'
 import { applyBranding, cacheBranding, type ThemeMode } from '@/lib/theme'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { requestPushPermission, pushConfigured } from '@/components/OneSignalInit'
+import SettingsDataTab from '@/components/SettingsDataTab'
 import { APP_VERSION } from '@/lib/version'
 import type { NotifyMode } from '@/types'
 
@@ -23,7 +24,7 @@ export default function Settings() {
   const canBoat = profile ? canEditBoatSettings(profile.role) : false
   const tabs = useMemo(() => {
     const t = ['General']
-    if (canBoat) t.push('Boat')
+    if (canBoat) t.push('Boat', 'Data')
     t.push('Alerts', 'Install')
     return t
   }, [canBoat])
@@ -40,6 +41,7 @@ export default function Settings() {
       <div style={{ padding: '4px 16px 16px' }}>
         {tab === 'General' && <GeneralTab />}
         {tab === 'Boat' && <BoatTab />}
+        {tab === 'Data' && <SettingsDataTab />}
         {tab === 'Alerts' && <AlertsTab />}
         {tab === 'Install' && <InstallTab />}
       </div>
