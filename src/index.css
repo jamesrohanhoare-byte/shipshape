@@ -9,8 +9,9 @@
    ============================================================ */
 
 @theme {
+  /* Apple devices resolve -apple-system (real SF); everyone else falls to Geist. */
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
-               'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
+               'Geist', 'Segoe UI', system-ui, 'Helvetica Neue', Arial, sans-serif;
 
   /* Light = iOS systemGroupedBackground family */
   --color-base:      #F2F2F7;
@@ -291,4 +292,36 @@ select.input {
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── Glass pass — atmosphere behind translucent surfaces ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -10% -10% auto -10%;
+  height: 60vh;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(80% 70% at 18% -5%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 60%),
+    radial-gradient(70% 60% at 95% 0%, color-mix(in srgb, var(--color-accent) 12%, transparent), transparent 55%);
+  opacity: 0.9;
+}
+#root { position: relative; z-index: 1; }
+
+/* Frosted, floating surfaces that pick up the gradient behind them */
+.card, .card-sm, .list-group {
+  background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 50%, var(--color-border));
+}
+.list-row { background: transparent; }
+.list-row:active { background: var(--color-sunken); }
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .card-sm,
+[data-theme="dark"] .list-group {
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  border: 1px solid rgba(255,255,255,0.08);
 }

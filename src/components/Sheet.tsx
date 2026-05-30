@@ -47,7 +47,10 @@ export default function Sheet({ open, onClose, title, children, maxHeight = '88v
             onDragEnd={handleDragEnd}
             style={{
               position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 81,
-              background: 'var(--color-surface)',
+              background: 'color-mix(in srgb, var(--color-surface) 86%, transparent)',
+              backdropFilter: 'blur(30px) saturate(180%)',
+              WebkitBackdropFilter: 'blur(30px) saturate(180%)',
+              borderTop: '1px solid color-mix(in srgb, var(--color-surface) 40%, var(--color-border))',
               borderRadius: '22px 22px 0 0',
               maxHeight, display: 'flex', flexDirection: 'column',
               boxShadow: '0 -10px 40px -10px rgba(0,0,0,0.25)',

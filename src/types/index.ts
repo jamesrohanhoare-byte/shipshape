@@ -1,6 +1,7 @@
 export type Role = 'captain' | 'manager' | 'deckhand' | 'engineer'
 
 export type ThemeMode = 'light' | 'dark' | 'auto'
+export type NotifyMode = 'all' | 'low' | 'off'
 
 export interface Boat {
   id: string
@@ -9,6 +10,7 @@ export interface Boat {
   logo_url: string | null
   accent_color: string | null
   theme_mode: ThemeMode | null
+  notify_mode: NotifyMode | null
   created_at: string
 }
 

@@ -53,6 +53,15 @@ Deno.serve(async (req) => {
     const unit = (item as { units?: { abbreviation?: string } }).units?.abbreviation ?? ''
     const qty = Number(item.current_quantity)
     const par = Number(item.par_level)
+    const low = qty <= par
+
+    // Respect the boat's notification preference (all | low | off)
+    const { data: boatRow } = await admin
+      .from('boats').select('notify_mode').eq('id', caller.boat_id).single()
+    const mode = (boatRow as { notify_mode?: string } | null)?.notify_mode ?? 'all'
+    if (mode === 'off') return json({ ok: true, skipped: 'notifications off' })
+    if (mode === 'low' && !low) return json({ ok: true, skipped: 'low-only mode, above par' })
+
     const who = (caller as { full_name?: string }).full_name || 'A crew member'
     const usedTxt = usedQty > 0 ? `${who} used ${usedQty} ${unit}`.trim() : `${who} logged usage`
 

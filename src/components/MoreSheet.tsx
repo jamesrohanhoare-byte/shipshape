@@ -4,6 +4,7 @@ import Sheet from './Sheet'
 import { useAuth } from '@/context/AuthContext'
 import { canViewReports, canManageCrew, ROLE_LABELS } from '@/lib/permissions'
 import { initials } from '@/lib/formatters'
+import { APP_VERSION } from '@/lib/version'
 
 export default function MoreSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const navigate = useNavigate()
@@ -69,6 +70,10 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
             <span style={{ fontSize: 13, color: 'var(--color-text-faint)' }}>{initials(profile.full_name)}</span>
           </div>
         </button>
+
+        <div style={{ textAlign: 'center', padding: '10px 0 4px', fontSize: 12.5, color: 'var(--color-text-faint)', fontWeight: 600 }}>
+          ShipShape v{APP_VERSION}
+        </div>
       </div>
     </Sheet>
   )
