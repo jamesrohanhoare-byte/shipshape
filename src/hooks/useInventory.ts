@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { notifyLowStock } from '@/lib/api'
+import { notifyUsage } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import type { Item, Unit, Category, MovementType } from '@/types'
 
@@ -58,14 +58,13 @@ export function useLogMovement() {
       })
       if (error) throw error
 
-      const newQty = Math.max(0, Number(item.current_quantity) + change)
-      const crossedPar = type === 'deduct' && newQty <= Number(item.par_level)
-      return { itemId: item.id, crossedPar }
+      return { itemId: item.id, type, used: Math.abs(amount) }
     },
-    onSuccess: async ({ itemId, crossedPar }) => {
+    onSuccess: async ({ itemId, type, used }) => {
       qc.invalidateQueries({ queryKey: ['items'] })
       qc.invalidateQueries({ queryKey: ['movements'] })
-      if (crossedPar) await notifyLowStock(itemId)
+      // Notify captain/manager on every usage; the function escalates when low
+      if (type === 'deduct') await notifyUsage(itemId, used)
     },
   })
 }

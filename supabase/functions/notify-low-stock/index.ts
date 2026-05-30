@@ -30,22 +30,20 @@ Deno.serve(async (req) => {
     const { data: userData } = await admin.auth.getUser(jwt)
     if (!userData?.user) return json({ error: 'Invalid token' }, 401)
     const { data: caller } = await admin
-      .from('profiles').select('boat_id').eq('id', userData.user.id).single()
+      .from('profiles').select('boat_id, full_name').eq('id', userData.user.id).single()
     if (!caller) return json({ error: 'No profile' }, 403)
 
     const body = await req.json()
     const itemId = String(body.item_id ?? '')
+    const usedQty = Number(body.used_qty ?? 0)
     if (!itemId) return json({ error: 'item_id required' }, 400)
 
-    // Confirm the item belongs to the caller's boat and is actually at/below par
+    // Confirm the item belongs to the caller's boat
     const { data: item } = await admin
       .from('items')
       .select('name, current_quantity, par_level, boat_id, units(abbreviation)')
       .eq('id', itemId).eq('boat_id', caller.boat_id).single()
     if (!item) return json({ error: 'Item not found' }, 404)
-    if (Number(item.current_quantity) > Number(item.par_level)) {
-      return json({ ok: true, skipped: 'above par' })
-    }
 
     if (!appId || !restKey) {
       // Push not configured — succeed quietly so the app flow isn't blocked
@@ -54,7 +52,17 @@ Deno.serve(async (req) => {
 
     const unit = (item as { units?: { abbreviation?: string } }).units?.abbreviation ?? ''
     const qty = Number(item.current_quantity)
-    const message = `${item.name} is low — ${qty} ${unit} left (par ${item.par_level})`
+    const par = Number(item.par_level)
+    const who = (caller as { full_name?: string }).full_name || 'A crew member'
+    const usedTxt = usedQty > 0 ? `${who} used ${usedQty} ${unit}`.trim() : `${who} logged usage`
+
+    // Notify on every usage; escalate the heading/tail when it crosses par
+    let heading = 'Stock used'
+    let tail = `${qty} ${unit} left`.trim()
+    if (qty <= 0) { heading = '❗ Out of stock'; tail = `${item.name} is finished — on the shopping list` }
+    else if (qty <= par) { heading = '⚠️ Now low'; tail = `${qty} ${unit} left — added to shopping list`.trim() }
+
+    const message = `${item.name}: ${usedTxt}. ${tail}.`
 
     // New-format keys (os_v2_...) use `Key` auth on api.onesignal.com; legacy
     // keys use `Basic`. Auto-detect so either works.
@@ -70,7 +78,7 @@ Deno.serve(async (req) => {
         headers: { 'Content-Type': 'application/json', Authorization: authHeader },
         body: JSON.stringify({
           app_id: appId,
-          headings: { en: 'Low stock' },
+          headings: { en: heading },
           contents: { en: message },
           filters: [
             { field: 'tag', key: 'boat_id', relation: '=', value: caller.boat_id },

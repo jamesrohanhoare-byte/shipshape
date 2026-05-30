@@ -17,11 +17,12 @@ export async function createCrewMember(input: {
   if ((data as { error?: string })?.error) throw new Error((data as { error: string }).error)
 }
 
-/** Fire a low-stock push (best-effort; never blocks the UI flow). */
-export async function notifyLowStock(itemId: string): Promise<void> {
+/** Fire a usage push to captain/manager (best-effort; never blocks the UI flow).
+ *  Sends on every deduction; the function escalates the message when it crosses par. */
+export async function notifyUsage(itemId: string, usedQty: number): Promise<void> {
   try {
-    await supabase.functions.invoke('notify-low-stock', { body: { item_id: itemId } })
+    await supabase.functions.invoke('notify-low-stock', { body: { item_id: itemId, used_qty: usedQty } })
   } catch (err) {
-    console.warn('notify-low-stock failed (non-blocking):', err)
+    console.warn('usage push failed (non-blocking):', err)
   }
 }
