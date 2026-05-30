@@ -40,12 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true
 
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!active) return
-      setSession(data.session)
-      if (data.session) await loadContext()
-      setLoading(false)
-    })
+    ;(async () => {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!active) return
+        setSession(data.session)
+        if (data.session) await loadContext()
+      } catch (err) {
+        // Never trap the user on the splash screen if session restore fails
+        console.warn('Session restore failed:', err)
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
 
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
       if (!active) return
