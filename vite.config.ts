@@ -27,9 +27,22 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Precache hashed assets (fast), but NOT the HTML shell — the shell is
+        // fetched network-first so a bad/old cached build can never trap users.
+        globPatterns: ['**/*.{js,css,ico,png,svg,woff2}'],
+        navigateFallback: null,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         // OneSignal registers its own service worker scope; don't let Workbox claim it
         navigateFallbackDenylist: [/^\/OneSignalSDKWorker\.js$/],
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: { cacheName: 'html-shell', networkTimeoutSeconds: 4, expiration: { maxEntries: 4 } },
+          },
+        ],
       },
     }),
   ],
