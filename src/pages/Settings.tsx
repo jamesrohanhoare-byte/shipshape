@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -12,7 +12,7 @@ import { useUnits, useCategories } from '@/hooks/useInventory'
 import { canEditBoatSettings, canManageCrew } from '@/lib/permissions'
 import { applyBranding, cacheBranding, type ThemeMode } from '@/lib/theme'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
-import { requestPushPermission, pushConfigured } from '@/components/OneSignalInit'
+import { requestPushPermission, pushConfigured } from '@/lib/push'
 import SettingsDataTab from '@/components/SettingsDataTab'
 import { APP_VERSION } from '@/lib/version'
 import type { NotifyMode } from '@/types'
@@ -361,8 +361,7 @@ function AlertsTab() {
 /* ── Install ── */
 function InstallTab() {
   const { state, platform, install } = usePWAInstall()
-  const [installed, setInstalled] = useState(state === 'standalone')
-  useEffect(() => { setInstalled(state === 'standalone') }, [state])
+  const installed = state === 'standalone'
 
   if (installed) {
     return (

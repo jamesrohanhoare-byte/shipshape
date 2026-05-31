@@ -35,7 +35,7 @@ async function getXLSX() {
 
 function toNumber(v: unknown): number | undefined {
   if (typeof v === 'number') return isNaN(v) ? undefined : v
-  const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ''))
+  const n = parseFloat(String(v).replace(/[^0-9.-]/g, ''))
   return isNaN(n) ? undefined : n
 }
 

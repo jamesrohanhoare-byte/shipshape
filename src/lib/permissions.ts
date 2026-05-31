@@ -24,7 +24,7 @@ export function canManageStock(role: Role): boolean {
 }
 
 /** Deduct stock / log usage — everyone can. */
-export function canDeductStock(_role: Role): boolean {
+export function canDeductStock(): boolean {
   return true
 }
 

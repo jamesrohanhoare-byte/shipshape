@@ -42,18 +42,3 @@ export default function OneSignalInit() {
 
   return null
 }
-
-/** Ask the browser/OS for push permission — wired to the Settings toggle. */
-export async function requestPushPermission(): Promise<boolean> {
-  if (!APP_ID) return false
-  try {
-    await OneSignal.Notifications.requestPermission()
-    return OneSignal.Notifications.permission
-  } catch {
-    return false
-  }
-}
-
-export function pushConfigured(): boolean {
-  return !!APP_ID
-}

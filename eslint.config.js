@@ -18,5 +18,10 @@ export default defineConfig([
     languageOptions: {
       globals: globals.browser,
     },
+    rules: {
+      // Resetting local form state when an `open`/`item` prop changes is a valid,
+      // intentional pattern in our sheets. Keep it visible as a warning, not an error.
+      'react-hooks/set-state-in-effect': 'warn',
+    },
   },
 ])
