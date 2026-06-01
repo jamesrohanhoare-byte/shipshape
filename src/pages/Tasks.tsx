@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { useCrew } from '@/hooks/useCrew'
 import { canManageTasks } from '@/lib/permissions'
+import { notifyTaskCompleted } from '@/lib/api'
 import { formatDate, initials } from '@/lib/formatters'
 import { toDateStr, today, buildDayStrip, occursOnDate, recurrenceLabel } from '@/lib/taskScheduling'
 import { isToday } from 'date-fns'
@@ -122,6 +123,7 @@ export default function Tasks() {
         if (error) qc.invalidateQueries({ queryKey: ['tasks_view'] })
         else if (data) qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.map(t => t.id === task.id && t._occurrence === task._occurrence ? { ...t, _completionId: data.id } : t))
       }
+      if (nextDone) notifyTaskCompleted(task.id)
       return
     }
     const next = NEXT[task.status]
@@ -129,6 +131,7 @@ export default function Tasks() {
     const { error } = await supabase.from('tasks').update({ status: next }).eq('id', task.id)
     if (error) qc.invalidateQueries({ queryKey: ['tasks_view'] })
     qc.invalidateQueries({ queryKey: ['tasks_dots'] })
+    if (next === 'done') notifyTaskCompleted(task.id)
   }
 
   // ── Recurring: skip just this day, or delete the whole series ──

@@ -27,6 +27,24 @@ export async function notifyUsage(itemId: string, usedQty: number): Promise<void
   }
 }
 
+/** Tell captain/manager a task was completed (best-effort, boat-scoped server-side). */
+export async function notifyTaskCompleted(taskId: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('notify-task', { body: { event: 'completed', task_id: taskId } })
+  } catch (err) {
+    console.warn('task-done push failed (non-blocking):', err)
+  }
+}
+
+/** Tell the assignee they were given a task (best-effort, boat-scoped server-side). */
+export async function notifyTaskAssigned(taskId: string): Promise<void> {
+  try {
+    await supabase.functions.invoke('notify-task', { body: { event: 'assigned', task_id: taskId } })
+  } catch (err) {
+    console.warn('task-assign push failed (non-blocking):', err)
+  }
+}
+
 interface TestResult { ok: boolean; detail: string }
 interface OneSignalResult { body?: { recipients?: number; errors?: unknown } }
 

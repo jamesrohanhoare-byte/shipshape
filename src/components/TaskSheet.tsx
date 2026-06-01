@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext'
 import { useCrew } from '@/hooks/useCrew'
 import { useQueryClient } from '@tanstack/react-query'
 import { ROLE_LABELS } from '@/lib/permissions'
+import { notifyTaskAssigned } from '@/lib/api'
 import { toDateStr, today } from '@/lib/taskScheduling'
 import type { Task, TaskStatus, TaskShift, RecurrenceType } from '@/types'
 
@@ -74,8 +75,10 @@ export default function TaskSheet({
         const { error } = await supabase.from('tasks').update(payload).eq('id', task.id)
         if (error) throw error
       } else {
-        const { error } = await supabase.from('tasks').insert({ ...payload, boat_id: boat!.id })
+        const { data, error } = await supabase.from('tasks').insert({ ...payload, boat_id: boat!.id }).select('id').single()
         if (error) throw error
+        // Ping the assignee that they've been given a task (best-effort).
+        if (data && assignedTo) notifyTaskAssigned(data.id)
       }
       qc.invalidateQueries({ queryKey: ['tasks_view'] })
       qc.invalidateQueries({ queryKey: ['tasks_dots'] })
