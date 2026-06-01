@@ -68,6 +68,8 @@ export interface StockMovement {
 }
 
 export type TaskStatus = 'open' | 'in_progress' | 'done'
+export type TaskShift = 'day' | 'night'
+export type RecurrenceType = 'daily' | 'weekly' | 'monthly'
 
 export interface Task {
   id: string
@@ -77,8 +79,30 @@ export interface Task {
   assigned_to: string | null
   status: TaskStatus
   due_date: string | null
+  shift: TaskShift
+  is_recurring: boolean
+  recurrence_type: RecurrenceType | null
+  recurrence_start_date: string | null
   created_by: string | null
   created_at: string
+}
+
+export interface TaskCompletion {
+  id: string
+  boat_id: string
+  task_id: string
+  occurrence_date: string
+  done: boolean
+  skipped: boolean
+  created_at: string
+}
+
+/** A task as rendered on a specific day — may be a recurring occurrence or a carry-over. */
+export interface DisplayTask extends Task {
+  _carriedOver?: boolean
+  _occurrence?: string      // recurring: the date this occurrence is for
+  _completionId?: string    // recurring: existing task_completions row id
+  _occurrenceDone?: boolean // recurring: done state for this occurrence
 }
 
 export interface SleepLog {

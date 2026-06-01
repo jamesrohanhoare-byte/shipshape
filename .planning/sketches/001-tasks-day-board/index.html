@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipShape · Tasks — Day Board Sketch</title>
+<style>
+  :root{
+    --accent:#0E8C9B;            /* ocean teal */
+    --accent-dim:rgba(14,140,155,.12);
+    --base:#F2F4F6;
+    --surface:#FFFFFF;
+    --surface-2:#F7F9FA;
+    --text:#0B1722;
+    --text-2:#56636E;
+    --text-3:#8A96A0;
+    --faint:#C2CBD2;
+    --divider:#E6EAEE;
+    --success:#1FA463;
+    --night:#5B6CCB;            /* night-watch indigo */
+    --night-dim:rgba(91,108,203,.13);
+    --amber:#E0922F;
+    --amber-dim:rgba(224,146,47,.14);
+    --shadow:0 1px 3px rgba(11,23,34,.06);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    background:linear-gradient(160deg,#dfe7ea,#eef1f3 40%);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center;
+    padding:24px 12px 48px; color:var(--text);
+  }
+
+  /* variant switcher */
+  .switcher{display:flex;gap:6px;margin-bottom:18px;background:#fff;padding:5px;border-radius:14px;box-shadow:var(--shadow)}
+  .switcher button{
+    border:none;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--text-2);
+    padding:8px 16px;border-radius:10px;cursor:pointer
+  }
+  .switcher button.on{background:var(--accent);color:#fff}
+
+  /* phone frame */
+  .phone{
+    width:390px;max-width:100%;height:780px;background:var(--base);
+    border-radius:42px;overflow:hidden;position:relative;
+    box-shadow:0 20px 60px rgba(11,23,34,.22),0 0 0 10px #0c1116,0 0 0 11px #2a2f36;
+    display:none;flex-direction:column
+  }
+  .phone.on{display:flex}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:30px;background:#0c1116;border-radius:0 0 18px 18px;z-index:50}
+
+  /* glass header */
+  .hdr{
+    padding:46px 20px 10px;background:rgba(242,244,246,.72);backdrop-filter:saturate(180%) blur(20px);
+    -webkit-backdrop-filter:saturate(180%) blur(20px);position:relative;z-index:20;
+    border-bottom:1px solid var(--divider)
+  }
+  .hdr .row{display:flex;align-items:flex-end;justify-content:space-between}
+  .hdr h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+  .hdr .sub{font-size:13px;color:var(--text-3);margin-top:2px;font-weight:500}
+
+  /* day strip */
+  .strip-wrap{display:flex;align-items:center;background:rgba(242,244,246,.72);backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--divider);position:relative;z-index:19}
+  .strip{display:flex;gap:3px;overflow-x:auto;padding:9px 8px;flex:1;scrollbar-width:none}
+  .strip::-webkit-scrollbar{display:none}
+  .day{flex:0 0 auto;width:46px;display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:7px 0 5px;border-radius:13px;border:none;background:none;cursor:pointer}
+  .day .dow{font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.02em}
+  .day .dnum{font-size:17px;font-weight:700;color:var(--text)}
+  .day .dot{width:5px;height:5px;border-radius:50%;background:transparent;margin-top:1px}
+  .day .dot.has{background:var(--accent)}
+  .day.today .dnum{color:var(--accent)}
+  .day.sel{background:var(--accent)}
+  .day.sel .dow{color:rgba(255,255,255,.8)}
+  .day.sel .dnum{color:#fff}
+  .day.sel .dot.has{background:rgba(255,255,255,.85)}
+
+  /* filter chips */
+  .chips{display:flex;gap:8px;padding:12px 20px 4px}
+  .chip{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--divider);background:var(--surface);
+    color:var(--text-2);padding:6px 14px;border-radius:999px;cursor:pointer;display:flex;align-items:center;gap:5px}
+  .chip.on{background:var(--text);color:#fff;border-color:var(--text)}
+  .chip.night.on{background:var(--night);border-color:var(--night)}
+  .chip .ic{width:13px;height:13px}
+
+  /* scroll body */
+  .body{flex:1;overflow-y:auto;padding:8px 16px 96px}
+  .body::-webkit-scrollbar{display:none}
+
+  .daylabel{font-size:13px;font-weight:700;color:var(--text-2);padding:8px 4px 6px;letter-spacing:.01em}
+
+  /* segmented (variant A) */
+  .seg{display:flex;background:#E4E8EC;border-radius:11px;padding:3px;margin:4px 4px 10px}
+  .seg button{flex:1;border:none;background:none;font:inherit;font-size:13px;font-weight:600;color:var(--text-2);
+    padding:7px 0;border-radius:9px;cursor:pointer}
+  .seg button.on{background:#fff;color:var(--text);box-shadow:var(--shadow)}
+
+  /* group heading (variant B) */
+  .ghead{display:flex;align-items:center;gap:8px;padding:14px 4px 7px}
+  .ghead .lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-3)}
+  .ghead .cnt{font-size:11px;font-weight:700;color:var(--text-3);background:#E4E8EC;border-radius:999px;padding:1px 8px}
+
+  /* task card */
+  .card{background:var(--surface);border-radius:15px;box-shadow:var(--shadow);margin-bottom:8px;
+    padding:13px 14px;display:flex;gap:12px;align-items:flex-start;position:relative;overflow:hidden}
+  .card.carried::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--amber)}
+  .card.night::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--night)}
+  .statusdot{flex:0 0 auto;margin-top:1px;width:22px;height:22px;border-radius:50%;border:2px solid var(--faint);
+    cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .statusdot.doing{border-color:var(--accent);position:relative}
+  .statusdot.doing::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  .statusdot.done{border-color:var(--success);background:var(--success)}
+  .statusdot.done::after{content:"✓";color:#fff;font-size:13px;font-weight:800}
+  .meat{flex:1;min-width:0}
+  .ttl{font-size:15px;font-weight:650;line-height:1.25}
+  .card.donecard .ttl{text-decoration:line-through;color:var(--text-3)}
+  .desc{font-size:13px;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{display:flex;align-items:center;gap:10px;margin-top:7px;flex-wrap:wrap}
+  .who{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-2);font-weight:600}
+  .av{width:19px;height:19px;border-radius:50%;background:var(--accent);color:#fff;font-size:10px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .av.b{background:#C2562E}.av.c{background:#6A4FB3}
+  .due{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-3);font-weight:600}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px}
+  .badge.carry{background:var(--amber-dim);color:#9A6018}
+  .badge.nightb{background:var(--night-dim);color:var(--night)}
+  .badge.rep{background:var(--accent-dim);color:var(--accent)}
+
+  .carryhead{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--amber);
+    padding:16px 4px 7px;display:flex;align-items:center;gap:6px}
+
+  /* tab bar */
+  .tabbar{position:absolute;bottom:0;left:0;right:0;height:84px;background:rgba(255,255,255,.82);
+    backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--divider);
+    display:flex;justify-content:space-around;padding-top:9px;z-index:30}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:600;color:var(--text-3)}
+  .tab.on{color:var(--accent)}
+  .tab .ti{width:24px;height:24px}
+
+  /* FAB */
+  .fab{position:absolute;right:20px;bottom:100px;width:54px;height:54px;border-radius:50%;background:var(--accent);
+    border:none;color:#fff;font-size:28px;font-weight:300;cursor:pointer;z-index:31;
+    box-shadow:0 6px 18px rgba(14,140,155,.45);display:flex;align-items:center;justify-content:center;line-height:1}
+
+  .hide{display:none!important}
+  .caption{max-width:390px;font-size:12.5px;color:#4a5560;margin-top:14px;line-height:1.5;text-align:center}
+</style>
+</head>
+<body>
+
+<div class="switcher">
+  <button id="bA" class="on" onclick="show('A')">Variant A · Filtered</button>
+  <button id="bB" onclick="show('B')">Variant B · Whole-day board</button>
+</div>
+
+<!-- ============ VARIANT A : segmented filter (one status at a time) ============ -->
+<div class="phone on" id="pA">
+  <div class="notch"></div>
+  <div class="hdr">
+    <div class="row">
+      <div><h1>Tasks</h1><div class="sub">4 open today</div></div>
+    </div>
+  </div>
+
+  <!-- day strip -->
+  <div class="strip-wrap">
+    <div class="strip">
+      <button class="day"><span class="dow">Sat</span><span class="dnum">31</span><span class="dot"></span></button>
+      <button class="day"><span class="dow">Sun</span><span class="dnum">1</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Mon</span><span class="dnum">2</span><span class="dot has"></span></button>
+      <button class="day today sel"><span class="dow">Tue</span><span class="dnum">3</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Wed</span><span class="dnum">4</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Thu</span><span class="dnum">5</span><span class="dot"></span></button>
+      <button class="day"><span class="dow">Fri</span><span class="dnum">6</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Sat</span><span class="dnum">7</span><span class="dot"></span></button>
+    </div>
+  </div>
+
+  <!-- night-watch / day filter chips -->
+  <div class="chips">
+    <button class="chip on" onclick="chip(this,'A')">All</button>
+    <button class="chip" onclick="chip(this,'A')">☀︎ Day</button>
+    <button class="chip night" onclick="chip(this,'A')">🌙 Night watch</button>
+  </div>
+
+  <div class="body">
+    <div class="daylabel">Today — 3 Jun</div>
+    <div class="seg">
+      <button class="on" onclick="seg(this)">To do · 3</button>
+      <button onclick="seg(this)">Doing · 1</button>
+      <button onclick="seg(this)">Done · 2</button>
+    </div>
+
+    <!-- to do list -->
+    <div class="card">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Service the watermaker</div>
+        <div class="desc">Replace pre-filter, flush membrane</div>
+        <div class="meta">
+          <span class="who"><span class="av">JH</span>Jared</span>
+          <span class="due">▦ Today</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card night">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Anchor-watch round, log position</div>
+        <div class="meta">
+          <span class="who"><span class="av b">SC</span>Sam</span>
+          <span class="badge nightb">🌙 Night watch</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card carried">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Top up the gen coolant</div>
+        <div class="meta">
+          <span class="who"><span class="av c">EN</span>Engineer</span>
+          <span class="badge carry">↩ From Mon 2 Jun</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="fab">+</button>
+  <div class="tabbar">
+    <div class="tab"><div class="ti">▤</div>Home</div>
+    <div class="tab"><div class="ti">▥</div>Stock</div>
+    <div class="tab"><div class="ti">☷</div>Shopping</div>
+    <div class="tab on"><div class="ti">☑</div>Tasks</div>
+    <div class="tab"><div class="ti">•••</div>More</div>
+  </div>
+</div>
+
+<!-- ============ VARIANT B : whole-day board (all three groups stacked) ============ -->
+<div class="phone" id="pB">
+  <div class="notch"></div>
+  <div class="hdr">
+    <div class="row">
+      <div><h1>Tasks</h1><div class="sub">4 open · 2 done today</div></div>
+    </div>
+  </div>
+
+  <div class="strip-wrap">
+    <div class="strip">
+      <button class="day"><span class="dow">Sat</span><span class="dnum">31</span><span class="dot"></span></button>
+      <button class="day"><span class="dow">Sun</span><span class="dnum">1</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Mon</span><span class="dnum">2</span><span class="dot has"></span></button>
+      <button class="day today sel"><span class="dow">Tue</span><span class="dnum">3</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Wed</span><span class="dnum">4</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Thu</span><span class="dnum">5</span><span class="dot"></span></button>
+      <button class="day"><span class="dow">Fri</span><span class="dnum">6</span><span class="dot has"></span></button>
+      <button class="day"><span class="dow">Sat</span><span class="dnum">7</span><span class="dot"></span></button>
+    </div>
+  </div>
+
+  <div class="chips">
+    <button class="chip on" onclick="chip(this,'B')">All</button>
+    <button class="chip" onclick="chip(this,'B')">☀︎ Day</button>
+    <button class="chip night" onclick="chip(this,'B')">🌙 Night watch</button>
+  </div>
+
+  <div class="body">
+    <div class="daylabel">Today — 3 Jun</div>
+
+    <!-- TO DO -->
+    <div class="ghead"><span class="lbl">To do</span><span class="cnt">3</span></div>
+    <div class="card">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Service the watermaker</div>
+        <div class="desc">Replace pre-filter, flush membrane</div>
+        <div class="meta"><span class="who"><span class="av">JH</span>Jared</span><span class="due">▦ Today</span></div>
+      </div>
+    </div>
+    <div class="card night">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Anchor-watch round, log position</div>
+        <div class="meta"><span class="who"><span class="av b">SC</span>Sam</span><span class="badge nightb">🌙 Night watch</span></div>
+      </div>
+    </div>
+    <div class="card carried">
+      <div class="statusdot"></div>
+      <div class="meat">
+        <div class="ttl">Top up the gen coolant</div>
+        <div class="meta"><span class="who"><span class="av c">EN</span>Engineer</span><span class="badge carry">↩ From Mon 2 Jun</span></div>
+      </div>
+    </div>
+
+    <!-- DOING -->
+    <div class="ghead"><span class="lbl">Doing</span><span class="cnt">1</span></div>
+    <div class="card">
+      <div class="statusdot doing"></div>
+      <div class="meat">
+        <div class="ttl">Rebuild the cockpit winch</div>
+        <div class="meta"><span class="who"><span class="av c">EN</span>Engineer</span><span class="badge rep">↻ Weekly</span></div>
+      </div>
+    </div>
+
+    <!-- DONE -->
+    <div class="ghead"><span class="lbl">Done</span><span class="cnt">2</span></div>
+    <div class="card donecard">
+      <div class="statusdot done"></div>
+      <div class="meat"><div class="ttl">Check bilge pumps</div>
+        <div class="meta"><span class="who"><span class="av b">SC</span>Sam</span></div></div>
+    </div>
+    <div class="card donecard">
+      <div class="statusdot done"></div>
+      <div class="meat"><div class="ttl">Provisioning run — fresh stores</div>
+        <div class="meta"><span class="who"><span class="av">JH</span>Jared</span></div></div>
+    </div>
+  </div>
+
+  <button class="fab">+</button>
+  <div class="tabbar">
+    <div class="tab"><div class="ti">▤</div>Home</div>
+    <div class="tab"><div class="ti">▥</div>Stock</div>
+    <div class="tab"><div class="ti">☷</div>Shopping</div>
+    <div class="tab on"><div class="ti">☑</div>Tasks</div>
+    <div class="tab"><div class="ti">•••</div>More</div>
+  </div>
+</div>
+
+<div class="caption">
+  Tap the day chips, the All / Day / Night-watch filter, and the status segments — they're live.
+  Both variants share the day strip, the carried-over badge (amber, "From Mon 2 Jun") and the night-watch edge (indigo).
+  <b>A</b> shows one status at a time (calm, focused). <b>B</b> shows the whole day at once (full picture, more scroll).
+</div>
+
+<script>
+  function show(v){
+    document.getElementById('pA').classList.toggle('on',v==='A');
+    document.getElementById('pB').classList.toggle('on',v==='B');
+    document.getElementById('bA').classList.toggle('on',v==='A');
+    document.getElementById('bB').classList.toggle('on',v==='B');
+  }
+  function seg(btn){[...btn.parentElement.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+  function chip(btn,v){[...btn.parentElement.children].forEach(b=>b.classList.remove('on'));btn.classList.add('on');}
+  // day strip select
+  document.querySelectorAll('.strip').forEach(strip=>{
+    strip.addEventListener('click',e=>{
+      const d=e.target.closest('.day'); if(!d)return;
+      strip.querySelectorAll('.day').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel');
+    });
+  });
+</script>
+</body>
+</html>
