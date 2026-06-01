@@ -8,3 +8,10 @@ verify_jwt = false
 
 [functions.create-crew-member]
 verify_jwt = false
+
+[functions.notify-task]
+verify_jwt = false
+
+# Triggered by pg_cron (no user JWT); guarded by its own x-cron-secret header.
+[functions.daily-task-digest]
+verify_jwt = false
