@@ -21,6 +21,7 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
   const [par, setPar] = useState('')
   const [opening, setOpening] = useState('')
   const [location, setLocation] = useState('')
+  const [purchaseLocation, setPurchaseLocation] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,9 +35,10 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
       setPrice(String(item.price_per_unit ?? ''))
       setPar(String(item.par_level ?? ''))
       setLocation(item.location ?? '')
+      setPurchaseLocation(item.purchase_location ?? '')
       setOpening('')
     } else {
-      setName(''); setCategoryId(''); setUnitId(''); setPrice(''); setPar(''); setOpening(''); setLocation('')
+      setName(''); setCategoryId(''); setUnitId(''); setPrice(''); setPar(''); setOpening(''); setLocation(''); setPurchaseLocation('')
     }
   }, [open, item])
 
@@ -52,6 +54,7 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
           price_per_unit: Number(price) || 0,
           par_level: Number(par) || 0,
           location: location.trim() || null,
+          purchase_location: purchaseLocation.trim() || null,
         }).eq('id', item.id)
         if (error) throw error
       } else {
@@ -63,6 +66,7 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
           price_per_unit: Number(price) || 0,
           par_level: Number(par) || 0,
           location: location.trim() || null,
+          purchase_location: purchaseLocation.trim() || null,
         }).select('id').single()
         if (error) throw error
         const openQty = Number(opening) || 0
@@ -139,9 +143,15 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
           </div>
         )}
 
-        <div>
-          <label className="label">Location (optional)</label>
-          <input className="input" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Bar fridge, Lazarette" />
+        <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: 1 }}>
+            <label className="label">Stored (optional)</label>
+            <input className="input" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Bar fridge" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label className="label">Bought at (optional)</label>
+            <input className="input" value={purchaseLocation} onChange={e => setPurchaseLocation(e.target.value)} placeholder="e.g. Makro, V&A" />
+          </div>
         </div>
 
         {error && (

@@ -414,3 +414,14 @@ create policy "task_completions_update" on public.task_completions for update
 create policy "task_completions_delete" on public.task_completions for delete
   using (boat_id = public.get_user_boat_id());
 
+-- ===================== 00008_item_purchase_location.sql =====================
+-- ============================================================
+-- ShipShape 00008 — where an item is bought (supplier/store).
+-- Distinct from `location` (where it's STORED on the boat).
+-- Surfaces on the shopping list so a provisioning run is grouped
+-- by where to go. Cost is already `price_per_unit`.
+-- ============================================================
+
+alter table public.items
+  add column if not exists purchase_location text;
+

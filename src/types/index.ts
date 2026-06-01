@@ -47,6 +47,7 @@ export interface Item {
   par_level: number
   current_quantity: number
   location: string | null
+  purchase_location: string | null
   photo_url: string | null
   created_at: string
   // joined (optional) — populated by select with foreign tables

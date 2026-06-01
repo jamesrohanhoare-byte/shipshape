@@ -33,11 +33,49 @@ export default function Shopping() {
     [list]
   )
 
+  // Group by where to buy it, so a provisioning run is organised by store.
+  const hasPurchaseInfo = useMemo(() => list.some(i => i.purchase_location?.trim()), [list])
+  const groups = useMemo(() => {
+    const map = new Map<string, Item[]>()
+    for (const i of list) {
+      const key = i.purchase_location?.trim() || 'Other'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(i)
+    }
+    return [...map.entries()].sort((a, b) =>
+      a[0] === 'Other' ? 1 : b[0] === 'Other' ? -1 : a[0].localeCompare(b[0])
+    )
+  }, [list])
+
   function share() {
-    const lines = list.map(i => `• ${i.name} — ${formatQty(suggestedQty(i))} ${i.unit?.abbreviation ?? ''}`.trim())
-    const text = `${boat?.name ?? 'Boat'} — Shopping list\n\n${lines.join('\n')}\n\nEst. ${formatZAR(totalCost)}`
+    const fmtItem = (i: Item) => `• ${i.name} — ${formatQty(suggestedQty(i))} ${i.unit?.abbreviation ?? ''}`.trim()
+    const body = hasPurchaseInfo
+      ? groups.map(([store, items]) => `${store}\n${items.map(fmtItem).join('\n')}`).join('\n\n')
+      : list.map(fmtItem).join('\n')
+    const text = `${boat?.name ?? 'Boat'} — Shopping list\n\n${body}\n\nEst. ${formatZAR(totalCost)}`
     if (navigator.share) navigator.share({ title: 'Shopping list', text }).catch(() => {})
     else { navigator.clipboard?.writeText(text); alert('Shopping list copied to clipboard') }
+  }
+
+  const renderRow = (item: Item) => {
+    const s = stockStatus(item)
+    const qty = suggestedQty(item)
+    const unit = item.unit?.abbreviation ?? ''
+    return (
+      <div key={item.id} className="list-row" onClick={() => canManage && setSelected(item)} style={{ cursor: canManage ? 'pointer' : 'default' }}>
+        <div style={{ width: 8, height: 8, borderRadius: 4, background: s === 'out' ? 'var(--color-danger)' : 'var(--color-warning)', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
+          <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
+            {formatQty(item.current_quantity)} on hand · buy ~{formatQty(qty)} {unit}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div className="amount" style={{ fontSize: 15, fontWeight: 700 }}>{formatZAR(qty * Number(item.price_per_unit))}</div>
+          {canManage && <div style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600, marginTop: 1 }}>Restock</div>}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -69,28 +107,16 @@ export default function Shopping() {
             </div>
           </div>
 
-          <div className="list-group">
-            {list.map(item => {
-              const s = stockStatus(item)
-              const qty = suggestedQty(item)
-              const unit = item.unit?.abbreviation ?? ''
-              return (
-                <div key={item.id} className="list-row" onClick={() => canManage && setSelected(item)} style={{ cursor: canManage ? 'pointer' : 'default' }}>
-                  <div style={{ width: 8, height: 8, borderRadius: 4, background: s === 'out' ? 'var(--color-danger)' : 'var(--color-warning)', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
-                    <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
-                      {formatQty(item.current_quantity)} on hand · buy ~{formatQty(qty)} {unit}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div className="amount" style={{ fontSize: 15, fontWeight: 700 }}>{formatZAR(qty * Number(item.price_per_unit))}</div>
-                    {canManage && <div style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600, marginTop: 1 }}>Restock</div>}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          {hasPurchaseInfo ? (
+            groups.map(([store, storeItems]) => (
+              <div key={store}>
+                <div className="section-header" style={{ paddingLeft: 4 }}>{store}</div>
+                <div className="list-group">{storeItems.map(renderRow)}</div>
+              </div>
+            ))
+          ) : (
+            <div className="list-group">{list.map(renderRow)}</div>
+          )}
           <p style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '14px 20px' }}>
             {canManage ? 'Tap an item to log a restock. It clears once back above par.' : 'Items here are below par. Your manager handles restocking.'}
           </p>
