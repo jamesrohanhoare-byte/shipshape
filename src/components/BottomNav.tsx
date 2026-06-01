@@ -12,7 +12,7 @@ const tabs = [
 ]
 
 // Routes that live inside the More sheet — keep the More tab highlighted on them
-const moreRoutes = ['/settings', '/reports', '/sleep', '/crew']
+const moreRoutes = ['/settings', '/reports', '/hours', '/crew']
 
 export default function BottomNav() {
   const location = useLocation()

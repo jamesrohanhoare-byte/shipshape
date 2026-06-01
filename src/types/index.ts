@@ -109,6 +109,20 @@ export interface DisplayTask extends Task {
   _occurrenceDone?: boolean // recurring: done state for this occurrence
 }
 
+export type TimeKind = 'work' | 'sleep'
+
+export interface TimeLog {
+  id: string
+  boat_id: string
+  user_id: string
+  kind: TimeKind
+  started_at: string
+  ended_at: string
+  hours: number
+  note: string | null
+  created_at: string
+}
+
 export interface SleepLog {
   id: string
   boat_id: string

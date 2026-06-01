@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { Settings, BarChart3, Moon, Users, LogOut, ChevronRight, Anchor } from 'lucide-react'
+import { Settings, BarChart3, Clock, Users, LogOut, ChevronRight, Anchor } from 'lucide-react'
 import Sheet from './Sheet'
 import { useAuth } from '@/context/AuthContext'
 import { canViewReports, canManageCrew, ROLE_LABELS } from '@/lib/permissions'
@@ -16,7 +16,7 @@ export default function MoreSheet({ open, onClose }: { open: boolean; onClose: (
   const items = [
     { icon: Settings, label: 'Settings', sub: 'Boat config, branding, crew', path: '/settings', show: true },
     { icon: BarChart3, label: 'Reports', sub: 'Usage & cost', path: '/reports', show: canViewReports(profile.role) },
-    { icon: Moon, label: 'Sleep Log', sub: 'Track your rest', path: '/sleep', show: true },
+    { icon: Clock, label: 'Hours', sub: 'Work & rest tracking', path: '/hours', show: true },
     { icon: Users, label: 'Crew', sub: 'Manage the team', path: '/crew', show: canManageCrew(profile.role) },
   ].filter(i => i.show)
 
