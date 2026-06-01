@@ -53,8 +53,11 @@ create index on public.stock_movements(item_id);
 create index on public.stock_movements(created_at);
 
 -- ── Keep items.current_quantity in sync from the ledger ───────
+-- SECURITY DEFINER so the cached-quantity update runs with owner privileges and
+-- isn't blocked by RLS when a deckhand (who may only *insert a deduct*, not edit
+-- items) logs usage. The movement insert itself stays RLS-gated below.
 create or replace function public.apply_stock_movement()
-returns trigger language plpgsql
+returns trigger language plpgsql security definer
 set search_path = public as $$
 begin
   update public.items
