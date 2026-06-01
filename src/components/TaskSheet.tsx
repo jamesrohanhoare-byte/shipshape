@@ -132,10 +132,10 @@ export default function TaskSheet({
           <label className="label">Shift</label>
           <div className="segmented">
             <button data-active={shift === 'day'} onClick={() => setShift('day')}>
-              <Sun size={15} style={{ verticalAlign: -2, marginRight: 5 }} />Day
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Sun size={15} /> Day</span>
             </button>
             <button data-active={shift === 'night'} onClick={() => setShift('night')}>
-              <Moon size={15} style={{ verticalAlign: -2, marginRight: 5 }} />Night watch
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}><Moon size={15} /> Night watch</span>
             </button>
           </div>
         </div>
