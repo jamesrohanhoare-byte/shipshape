@@ -113,10 +113,12 @@ export default function Tasks() {
       const nextDone = !task._occurrenceDone
       qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.map(t => t.id === task.id && t._occurrence === task._occurrence ? { ...t, _occurrenceDone: nextDone } : t))
       if (task._completionId) {
-        await supabase.from('task_completions').update({ done: nextDone }).eq('id', task._completionId)
+        const { error } = await supabase.from('task_completions').update({ done: nextDone }).eq('id', task._completionId)
+        if (error) qc.invalidateQueries({ queryKey: ['tasks_view'] })
       } else {
-        const { data } = await supabase.from('task_completions').insert({ boat_id: task.boat_id, task_id: task.id, occurrence_date: task._occurrence ?? dateKey, done: nextDone, skipped: false }).select().single()
-        if (data) qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.map(t => t.id === task.id && t._occurrence === task._occurrence ? { ...t, _completionId: data.id } : t))
+        const { data, error } = await supabase.from('task_completions').insert({ boat_id: task.boat_id, task_id: task.id, occurrence_date: task._occurrence ?? dateKey, done: nextDone, skipped: false }).select().single()
+        if (error) qc.invalidateQueries({ queryKey: ['tasks_view'] })
+        else if (data) qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.map(t => t.id === task.id && t._occurrence === task._occurrence ? { ...t, _completionId: data.id } : t))
       }
       return
     }
