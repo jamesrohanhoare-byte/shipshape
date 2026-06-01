@@ -11,6 +11,8 @@ export interface Boat {
   accent_color: string | null
   theme_mode: ThemeMode | null
   notify_mode: NotifyMode | null
+  currency: string | null
+  show_financials: boolean | null
   created_at: string
 }
 

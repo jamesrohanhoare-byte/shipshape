@@ -1,11 +1,26 @@
 import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns'
 
-export function formatZAR(n: number | null | undefined, opts?: { compact?: boolean }): string {
+/** Currency-aware money formatter. Currency is chosen per-boat (see useMoney). */
+export function formatMoney(n: number | null | undefined, currency = 'ZAR', opts?: { compact?: boolean }): string {
   const num = Number(n || 0)
-  if (opts?.compact && Math.abs(num) >= 1000) {
-    return `R${(num / 1000).toFixed(1)}k`
+  try {
+    return new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency,
+      currencyDisplay: 'narrowSymbol',
+      ...(opts?.compact
+        ? { notation: 'compact', maximumFractionDigits: 1 }
+        : { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    }).format(num)
+  } catch {
+    // Unknown currency code — fall back to a plain prefixed amount.
+    return `${currency} ${num.toLocaleString('en', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
-  return `R${num.toLocaleString('en-ZA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/** @deprecated Use useMoney() so the boat's chosen currency is respected. */
+export function formatZAR(n: number | null | undefined, opts?: { compact?: boolean }): string {
+  return formatMoney(n, 'ZAR', opts)
 }
 
 /** Quantities: trim trailing zeros but allow up to 2 decimals (e.g. 1.5 L, 12 each). */

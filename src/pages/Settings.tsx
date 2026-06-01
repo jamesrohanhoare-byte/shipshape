@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   Upload, Bell, BellRing, BellOff, Smartphone, Share, Plus, Trash2, Check,
-  Users, ChevronRight, LogOut, Palette, X, Compass,
+  Users, ChevronRight, LogOut, Palette, X, Compass, Coins,
 } from 'lucide-react'
+import { CURRENCIES } from '@/hooks/useMoney'
 import PageHeader from '@/components/PageHeader'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
@@ -119,6 +120,8 @@ function BoatTab() {
   const [name, setName] = useState(boat?.name ?? '')
   const [accent, setAccent] = useState(boat?.accent_color ?? '#0E7490')
   const [mode, setMode] = useState<ThemeMode>((boat?.theme_mode as ThemeMode) ?? 'light')
+  const [currency, setCurrency] = useState(boat?.currency ?? 'ZAR')
+  const [showFin, setShowFin] = useState(boat?.show_financials !== false)
   const [uploading, setUploading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
@@ -137,6 +140,8 @@ function BoatTab() {
     setMode(m); applyBranding({ accent, mode: m }); cacheBranding(accent, m)
     await patchBoat({ theme_mode: m })
   }
+  async function onCurrency(c: string) { setCurrency(c); await patchBoat({ currency: c }) }
+  async function onShowFin(v: boolean) { setShowFin(v); await patchBoat({ show_financials: v }) }
 
   async function onLogo(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -208,6 +213,28 @@ function BoatTab() {
         <div className="segmented">
           {(['light', 'dark', 'auto'] as ThemeMode[]).map(m => <button key={m} data-active={mode === m} onClick={() => onMode(m)} style={{ textTransform: 'capitalize' }}>{m}</button>)}
         </div>
+      </div>
+
+      {/* Currency */}
+      <div>
+        <label className="label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Coins size={14} /> Currency</label>
+        <select className="input" value={currency} onChange={e => onCurrency(e.target.value)}>
+          {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+        </select>
+        <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', marginTop: 6 }}>Used across the dashboard, shopping list and reports.</div>
+      </div>
+
+      {/* Financial stats toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 600, fontSize: 15 }}>Show financial stats</div>
+          <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', marginTop: 2, lineHeight: 1.5 }}>Stock value &amp; shopping costs on the dashboard. Reports always show.</div>
+        </div>
+        <button
+          role="switch" aria-checked={showFin} onClick={() => onShowFin(!showFin)}
+          style={{ flexShrink: 0, width: 46, height: 28, borderRadius: 14, border: 'none', cursor: 'pointer', position: 'relative', background: showFin ? 'var(--color-accent)' : 'var(--color-border, #ccd2d8)', transition: 'background .15s' }}>
+          <span style={{ position: 'absolute', top: 3, left: showFin ? 21 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 3px rgba(0,0,0,.25)' }} />
+        </button>
       </div>
 
       <ManagedList kind="units" hasAbbr title="Units of measure" placeholder="e.g. Bottle" abbrPlaceholder="btl"

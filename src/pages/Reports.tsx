@@ -8,7 +8,8 @@ import EmptyState from '@/components/EmptyState'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { canViewReports } from '@/lib/permissions'
-import { formatZAR, formatQty } from '@/lib/formatters'
+import { formatQty } from '@/lib/formatters'
+import { useMoney } from '@/hooks/useMoney'
 
 type Interval = 'today' | '7d' | '30d'
 const INTERVALS: { v: Interval; label: string; days: number }[] = [
@@ -24,6 +25,7 @@ interface DeductRow {
 
 export default function Reports() {
   const { profile, boat } = useAuth()
+  const money = useMoney()
   const [interval, setInterval] = useState<Interval>('7d')
 
   const days = INTERVALS.find(i => i.v === interval)!.days
@@ -92,7 +94,7 @@ export default function Reports() {
             </div>
             <div>
               <div style={{ fontSize: 12.5, color: 'var(--color-text-secondary)' }}>Consumed · {INTERVALS.find(i => i.v === interval)!.label.toLowerCase()}</div>
-              <div className="tabnum" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em' }}>{formatZAR(totalCost)}</div>
+              <div className="tabnum" style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.03em' }}>{money(totalCost)}</div>
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -109,14 +111,14 @@ export default function Reports() {
           <>
             {/* Chart */}
             <div className="card" style={{ marginBottom: 14, paddingBottom: 8 }}>
-              <div className="section-header" style={{ margin: '0 0 10px', padding: 0 }}>Top items by cost (R)</div>
+              <div className="section-header" style={{ margin: '0 0 10px', padding: 0 }}>Top items by cost</div>
               <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={chartData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--color-text-tertiary)' }} axisLine={false} tickLine={false} interval={0} />
                   <Tooltip
                     cursor={{ fill: 'var(--color-accent-dim)' }}
                     contentStyle={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 12, fontSize: 13 }}
-                    formatter={(v) => [formatZAR(Number(v)), 'Cost']}
+                    formatter={(v) => [money(Number(v)), 'Cost']}
                   />
                   <Bar dataKey="cost" radius={[7, 7, 0, 0]}>
                     {chartData.map((_, i) => <Cell key={i} fill="var(--color-accent)" opacity={1 - i * 0.1} />)}
@@ -134,7 +136,7 @@ export default function Reports() {
                     <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{i.name}</div>
                     <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>{formatQty(i.qty)} used</div>
                   </div>
-                  <div className="amount" style={{ fontWeight: 700 }}>{formatZAR(i.cost)}</div>
+                  <div className="amount" style={{ fontWeight: 700 }}>{money(i.cost)}</div>
                 </div>
               ))}
             </div>
@@ -148,7 +150,7 @@ export default function Reports() {
                     <div key={c.name} className="list-row" style={{ cursor: 'default' }}>
                       <BarChart3 size={16} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
                       <div style={{ flex: 1, fontWeight: 600 }}>{c.name}</div>
-                      <div className="amount" style={{ fontWeight: 700 }}>{formatZAR(c.cost)}</div>
+                      <div className="amount" style={{ fontWeight: 700 }}>{money(c.cost)}</div>
                     </div>
                   ))}
                 </div>

@@ -7,7 +7,8 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { useItems, stockStatus } from '@/hooks/useInventory'
 import { useCrew } from '@/hooks/useCrew'
-import { formatQty, formatZAR, formatRelative } from '@/lib/formatters'
+import { formatQty, formatRelative } from '@/lib/formatters'
+import { useMoney, useShowFinancials } from '@/hooks/useMoney'
 import type { StockMovement, Item } from '@/types'
 
 interface MovementRow extends StockMovement { item?: Pick<Item, 'name'> | null }
@@ -15,6 +16,8 @@ interface MovementRow extends StockMovement { item?: Pick<Item, 'name'> | null }
 export default function Home() {
   const navigate = useNavigate()
   const { profile, boat } = useAuth()
+  const money = useMoney()
+  const showFinancials = useShowFinancials()
   const { data: items = [] } = useItems()
   const { data: crew = [] } = useCrew()
 
@@ -71,7 +74,7 @@ export default function Home() {
           tone={lowItems.length > 0 ? 'warn' : 'ok'}
         />
         <Tile onClick={() => navigate('/stock')} icon={Boxes} value={String(items.length)} label="items tracked" />
-        <Tile icon={Wallet} value={formatZAR(stockValue, { compact: true })} label="stock on hand" wide />
+        {showFinancials && <Tile icon={Wallet} value={money(stockValue, { compact: true })} label="stock on hand" wide />}
       </div>
 
       {/* Running low preview */}

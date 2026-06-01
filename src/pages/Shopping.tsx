@@ -6,7 +6,8 @@ import QuantitySheet from '@/components/QuantitySheet'
 import { useItems, stockStatus } from '@/hooks/useInventory'
 import { useAuth } from '@/context/AuthContext'
 import { canManageStock } from '@/lib/permissions'
-import { formatQty, formatZAR } from '@/lib/formatters'
+import { formatQty } from '@/lib/formatters'
+import { useMoney, useShowFinancials } from '@/hooks/useMoney'
 import type { Item } from '@/types'
 
 function suggestedQty(item: Item): number {
@@ -16,6 +17,8 @@ function suggestedQty(item: Item): number {
 export default function Shopping() {
   const { profile, boat } = useAuth()
   const canManage = profile ? canManageStock(profile.role) : false
+  const money = useMoney()
+  const showFinancials = useShowFinancials()
   const { data: items = [], isLoading } = useItems()
   const [selected, setSelected] = useState<Item | null>(null)
 
@@ -52,7 +55,7 @@ export default function Shopping() {
     const body = hasPurchaseInfo
       ? groups.map(([store, items]) => `${store}\n${items.map(fmtItem).join('\n')}`).join('\n\n')
       : list.map(fmtItem).join('\n')
-    const text = `${boat?.name ?? 'Boat'} — Shopping list\n\n${body}\n\nEst. ${formatZAR(totalCost)}`
+    const text = `${boat?.name ?? 'Boat'} — Shopping list\n\n${body}${showFinancials ? `\n\nEst. ${money(totalCost)}` : ''}`
     if (navigator.share) navigator.share({ title: 'Shopping list', text }).catch(() => {})
     else { navigator.clipboard?.writeText(text); alert('Shopping list copied to clipboard') }
   }
@@ -71,7 +74,7 @@ export default function Shopping() {
           </div>
         </div>
         <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div className="amount" style={{ fontSize: 15, fontWeight: 700 }}>{formatZAR(qty * Number(item.price_per_unit))}</div>
+          {showFinancials && <div className="amount" style={{ fontSize: 15, fontWeight: 700 }}>{money(qty * Number(item.price_per_unit))}</div>}
           {canManage && <div style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600, marginTop: 1 }}>Restock</div>}
         </div>
       </div>
@@ -97,15 +100,17 @@ export default function Shopping() {
       ) : (
         <div style={{ padding: '4px 16px' }}>
           {/* Total card */}
-          <div className="card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Estimated to restock to par</div>
-              <div className="tabnum" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em' }}>{formatZAR(totalCost)}</div>
+          {showFinancials && (
+            <div className="card" style={{ marginBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Estimated to restock to par</div>
+                <div className="tabnum" style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.03em' }}>{money(totalCost)}</div>
+              </div>
+              <div style={{ width: 46, height: 46, borderRadius: 13, background: 'var(--color-accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShoppingCart size={22} style={{ color: 'var(--color-accent)' }} />
+              </div>
             </div>
-            <div style={{ width: 46, height: 46, borderRadius: 13, background: 'var(--color-accent-dim)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <ShoppingCart size={22} style={{ color: 'var(--color-accent)' }} />
-            </div>
-          </div>
+          )}
 
           {hasPurchaseInfo ? (
             groups.map(([store, storeItems]) => (
