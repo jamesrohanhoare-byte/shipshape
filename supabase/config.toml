@@ -1,0 +1,10 @@
+project_id = "shipshape"
+
+# These functions verify the caller's JWT internally (admin.auth.getUser), so the
+# gateway-level JWT check must stay OFF — otherwise the browser's CORS preflight
+# (which carries no auth header) is rejected and the function is never reached.
+[functions.notify-low-stock]
+verify_jwt = false
+
+[functions.create-crew-member]
+verify_jwt = false
