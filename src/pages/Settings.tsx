@@ -209,15 +209,17 @@ function BoatTab() {
         </div>
       </div>
 
-      <ManagedList kind="units" hasAbbr title="Units of measure" placeholder="e.g. Bottle" abbrPlaceholder="btl" />
-      <ManagedList kind="categories" title="Categories" placeholder="e.g. Beverages" />
+      <ManagedList kind="units" hasAbbr title="Units of measure" placeholder="e.g. Bottle" abbrPlaceholder="btl"
+        hint="How you count an item — a count (Bottle, Each, Case, Roll) or a measure (Litre, kg, ml for bulk). The short code shows next to quantities." />
+      <ManagedList kind="categories" title="Categories" placeholder="e.g. Beverages"
+        hint="Group items so Stock and Reports stay tidy (Beverages, Galley, Cleaning…)." />
     </div>
   )
 }
 
 /* Robust add / inline-edit / delete list for units & categories */
-function ManagedList({ kind, hasAbbr, title, placeholder, abbrPlaceholder }: {
-  kind: 'units' | 'categories'; hasAbbr?: boolean; title: string; placeholder: string; abbrPlaceholder?: string
+function ManagedList({ kind, hasAbbr, title, placeholder, abbrPlaceholder, hint }: {
+  kind: 'units' | 'categories'; hasAbbr?: boolean; title: string; placeholder: string; abbrPlaceholder?: string; hint?: string
 }) {
   const { boat } = useAuth()
   const qc = useQueryClient()
@@ -257,6 +259,7 @@ function ManagedList({ kind, hasAbbr, title, placeholder, abbrPlaceholder }: {
   return (
     <div>
       <label className="label">{title}</label>
+      {hint && <div style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', margin: '-2px 0 8px', lineHeight: 1.5 }}>{hint}</div>}
       {err && <div style={{ marginBottom: 8 }}><ErrorBanner msg={err} onClose={() => setErr(null)} /></div>}
       <div className="list-group" style={{ marginBottom: 8 }}>
         {list.map((x: { id: string; name: string; abbreviation?: string }) => (

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Anchor, Package, TriangleAlert, Users, FileUp, Smartphone, Share, Plus, Check,
-  ArrowRight, ChevronLeft,
+  ArrowRight, ChevronLeft, Ruler,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
@@ -24,10 +24,11 @@ export default function Onboarding({ onFinish }: { onFinish: () => void }) {
 
   const steps = useMemo<Step[]>(() => ([
     { icon: Anchor, title: `Welcome aboard, ${profile?.full_name?.split(' ')[0] ?? 'Captain'}`, body: `${boat?.name ?? 'Your boat'} is ready. Here's the 60-second tour of how ShipShape keeps your stock in order.` },
-    { icon: Package, title: 'Track everything onboard', body: 'Every consumable — from champagne to cleaning cloths. Open the Stock tab, tap an item, and log what you use or add. It all records who did what, when.' },
-    { icon: TriangleAlert, title: 'Par levels do the watching', body: 'Give each item a par level. The moment stock drops to it, the item lands on the Shopping tab automatically and the captain & manager get a heads-up.' },
-    { icon: Users, title: 'Add your crew', body: 'In Settings → Crew, add managers, deckhands and engineers. Each role sees exactly what they should — deckhands log usage, managers run stock, you run everything.', adminOnly: true },
-    { icon: FileUp, title: 'Bring your existing stock', body: 'Already have a spreadsheet? Settings → Data → upload it. Only an item Name is required — price, unit and par are optional and matched automatically. Grab the template there too.', adminOnly: true },
+    { icon: Package, title: 'The daily loop', body: 'This is the heart of it: open Stock, tap any item, hit Use, and enter how many you took. The count drops instantly and records who used it. Everyone on the boat does this — it takes two seconds.' },
+    { icon: Ruler, title: 'Items, units & par levels', body: 'Captain & Manager add each item with three things: a UNIT (how you count it — Bottle, Each, Case… or a measure like Litre or kg for bulk), a PRICE, and a PAR LEVEL (the minimum to keep before you reorder).', adminOnly: true },
+    { icon: TriangleAlert, title: 'Par levels do the watching', body: 'The moment an item drops to its par level, it lands on the Shopping tab automatically and the captain & manager get a push. Nothing runs out by surprise.' },
+    { icon: Users, title: 'Give each crew their own login', body: 'In Settings → Crew, add managers, deckhands and engineers — each with their own login. Deckhands can only log usage, managers run stock, you run everything. And you always see exactly who did what.', adminOnly: true },
+    { icon: FileUp, title: 'Bring your existing stock', body: 'Got a spreadsheet? Settings → Data → download the template or upload your own. Only an item Name is required — price, unit and par are optional and matched automatically.', adminOnly: true },
     { icon: Smartphone, title: 'Add it to your Home Screen', body: 'Install ShipShape so it runs full-screen like a real app — and so push alerts work on iPhone.', install: true },
   ]).filter(s => !s.adminOnly || isAdmin), [profile, boat, isAdmin])
 
