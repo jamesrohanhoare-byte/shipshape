@@ -15,7 +15,7 @@ import Tasks from '@/pages/Tasks'
 import Settings from '@/pages/Settings'
 import Crew from '@/pages/Crew'
 import Reports from '@/pages/Reports'
-import Sleep from '@/pages/Sleep'
+import Hours from '@/pages/Hours'
 
 function Gate() {
   const { session, profile, loading, refresh } = useAuth()
@@ -45,7 +45,8 @@ function Gate() {
           <Route path="/settings" element={<Settings />} />
           <Route path="/crew" element={<Crew />} />
           <Route path="/reports" element={<Reports />} />
-          <Route path="/sleep" element={<Sleep />} />
+          <Route path="/hours" element={<Hours />} />
+          <Route path="/sleep" element={<Navigate to="/hours" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
