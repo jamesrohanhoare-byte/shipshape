@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Plus, Search, Package, Pencil, MapPin } from 'lucide-react'
+import { Plus, Search, Package, Pencil, MapPin, CheckCircle2, Circle, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import EmptyState from '@/components/EmptyState'
 import QuantitySheet from '@/components/QuantitySheet'
@@ -8,6 +8,8 @@ import { useItems, stockStatus } from '@/hooks/useInventory'
 import { useAuth } from '@/context/AuthContext'
 import { canManageStock } from '@/lib/permissions'
 import { formatQty } from '@/lib/formatters'
+import { supabase } from '@/lib/supabase'
+import { useQueryClient } from '@tanstack/react-query'
 import type { Item } from '@/types'
 
 type Filter = 'all' | 'low' | 'out'
@@ -18,6 +20,7 @@ export default function Stock() {
   const { profile } = useAuth()
   const canManage = profile ? canManageStock(profile.role) : false
   const { data: items = [], isLoading } = useItems()
+  const qc = useQueryClient()
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -25,6 +28,8 @@ export default function Stock() {
   const [selected, setSelected] = useState<Item | null>(null)
   const [editing, setEditing] = useState<Item | null>(null)
   const [creating, setCreating] = useState(false)
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   // Categories present in the stock (for the filter chips)
   const categoryList = useMemo(() => {
@@ -56,16 +61,42 @@ export default function Stock() {
     return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]))
   }, [filtered])
 
+  // ── Bulk select + delete ──────────────────────────────────────
+  const allFilteredSelected = filtered.length > 0 && filtered.every(i => selectedIds.has(i.id))
+  function toggleId(id: string) {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+  function toggleSelectAll() {
+    setSelectedIds(allFilteredSelected ? new Set() : new Set(filtered.map(i => i.id)))
+  }
+  function exitSelect() { setSelectMode(false); setSelectedIds(new Set()) }
+  async function deleteSelected() {
+    const ids = [...selectedIds]
+    if (ids.length === 0) return
+    if (!confirm(`Delete ${ids.length} item${ids.length === 1 ? '' : 's'}? This removes them and their history.`)) return
+    const { error } = await supabase.from('items').delete().in('id', ids)
+    if (error) { alert(error.message); return }
+    qc.invalidateQueries({ queryKey: ['items'] })
+    exitSelect()
+  }
+
   return (
     <>
       <PageHeader
         title="Stock"
-        subtitle={`${items.length} item${items.length === 1 ? '' : 's'}`}
-        action={canManage && (
-          <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}>
-            <Plus size={17} /> Add
-          </button>
-        )}
+        subtitle={selectMode ? `${selectedIds.size} selected` : `${items.length} item${items.length === 1 ? '' : 's'}`}
+        action={canManage && (selectMode ? (
+          <button className="btn btn-secondary btn-sm" onClick={exitSelect}>Cancel</button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            {items.length > 0 && <button className="btn btn-secondary btn-sm" onClick={() => setSelectMode(true)}>Select</button>}
+            <button className="btn btn-primary btn-sm" onClick={() => setCreating(true)}><Plus size={17} /> Add</button>
+          </div>
+        ))}
       />
 
       <div style={{ padding: '4px 16px 0' }}>
@@ -90,6 +121,18 @@ export default function Stock() {
         )}
       </div>
 
+      {selectMode && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '2px 16px 10px' }}>
+          <button className="btn btn-secondary btn-sm" onClick={toggleSelectAll}>
+            {allFilteredSelected ? 'Deselect all' : 'Select all'}
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)' }}>{selectedIds.size} selected</span>
+          <button className="btn btn-danger btn-sm" onClick={deleteSelected} disabled={selectedIds.size === 0}>
+            <Trash2 size={15} /> Delete
+          </button>
+        </div>
+      )}
+
       {isLoading ? (
         <div style={{ padding: '8px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[...Array(5)].map((_, i) => <div key={i} className="skeleton" style={{ height: 64, borderRadius: 14 }} />)}
@@ -111,7 +154,11 @@ export default function Stock() {
                   const s = stockStatus(item)
                   const unit = item.unit?.abbreviation ?? ''
                   return (
-                    <div key={item.id} className="list-row" onClick={() => setSelected(item)} style={{ cursor: 'pointer' }}>
+                    <div key={item.id} className="list-row" onClick={() => selectMode ? toggleId(item.id) : setSelected(item)} style={{ cursor: 'pointer' }}>
+                      {selectMode && (selectedIds.has(item.id)
+                        ? <CheckCircle2 size={22} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+                        : <Circle size={22} style={{ color: 'var(--color-text-faint)', flexShrink: 0 }} />
+                      )}
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.name}</div>
                         <div style={{ fontSize: 13, color: 'var(--color-text-tertiary)', display: 'flex', alignItems: 'center', gap: 5, marginTop: 1 }}>
@@ -123,7 +170,7 @@ export default function Stock() {
                         <div className="tabnum" style={{ fontSize: 17, fontWeight: 700 }}>{formatQty(item.current_quantity)}<span style={{ fontSize: 12, color: 'var(--color-text-tertiary)', fontWeight: 500 }}> {unit}</span></div>
                         <span className={`badge ${STATUS_BADGE[s]}`} style={{ marginTop: 3, fontSize: 11, padding: '2px 8px' }}>{STATUS_LABEL[s]}</span>
                       </div>
-                      {canManage && (
+                      {canManage && !selectMode && (
                         <button onClick={e => { e.stopPropagation(); setEditing(item) }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-faint)', padding: 6, flexShrink: 0 }}>
                           <Pencil size={16} />
                         </button>
