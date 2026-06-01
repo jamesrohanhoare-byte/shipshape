@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
-import { ShoppingCart, CheckCircle2, Share2 } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
+import { ShoppingCart, CheckCircle2, Share2, X } from 'lucide-react'
 import PageHeader from '@/components/PageHeader'
 import EmptyState from '@/components/EmptyState'
 import QuantitySheet from '@/components/QuantitySheet'
+import { supabase } from '@/lib/supabase'
 import { useItems, stockStatus } from '@/hooks/useInventory'
 import { useAuth } from '@/context/AuthContext'
 import { canManageStock } from '@/lib/permissions'
@@ -19,12 +21,19 @@ export default function Shopping() {
   const canManage = profile ? canManageStock(profile.role) : false
   const money = useMoney()
   const showFinancials = useShowFinancials()
+  const qc = useQueryClient()
   const { data: items = [], isLoading } = useItems()
   const [selected, setSelected] = useState<Item | null>(null)
 
+  async function dismiss(item: Item) {
+    qc.setQueryData<Item[]>(['items'], prev => prev?.map(i => i.id === item.id ? { ...i, shopping_dismissed: true } : i))
+    const { error } = await supabase.from('items').update({ shopping_dismissed: true }).eq('id', item.id)
+    if (error) qc.invalidateQueries({ queryKey: ['items'] })
+  }
+
   const list = useMemo(() => {
     return items
-      .filter(i => stockStatus(i) !== 'ok')
+      .filter(i => stockStatus(i) !== 'ok' && !i.shopping_dismissed)
       .sort((a, b) => {
         const order = { out: 0, low: 1, ok: 2 }
         return order[stockStatus(a)] - order[stockStatus(b)] || a.name.localeCompare(b.name)
@@ -77,6 +86,15 @@ export default function Shopping() {
           {showFinancials && <div className="amount" style={{ fontSize: 15, fontWeight: 700 }}>{money(qty * Number(item.price_per_unit))}</div>}
           {canManage && <div style={{ fontSize: 12, color: 'var(--color-accent)', fontWeight: 600, marginTop: 1 }}>Restock</div>}
         </div>
+        {canManage && (
+          <button
+            onClick={e => { e.stopPropagation(); dismiss(item) }}
+            aria-label="Remove from shopping list"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-faint)', padding: 6, flexShrink: 0, marginLeft: 2 }}
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
     )
   }

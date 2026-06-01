@@ -50,6 +50,7 @@ export interface Item {
   current_quantity: number
   location: string | null
   purchase_location: string | null
+  shopping_dismissed: boolean
   photo_url: string | null
   created_at: string
   // joined (optional) — populated by select with foreign tables
