@@ -13,6 +13,7 @@ import { canEditBoatSettings, canManageCrew } from '@/lib/permissions'
 import { applyBranding, cacheBranding, type ThemeMode } from '@/lib/theme'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
 import { requestPushPermission, pushConfigured } from '@/lib/push'
+import { sendTestAlert } from '@/lib/api'
 import SettingsDataTab from '@/components/SettingsDataTab'
 import { APP_VERSION } from '@/lib/version'
 import type { NotifyMode } from '@/types'
@@ -299,11 +300,19 @@ function AlertsTab() {
   const configured = pushConfigured()
   const [granted, setGranted] = useState<boolean | null>(null)
   const [notifyMode, setNotifyMode] = useState<NotifyMode>((boat?.notify_mode as NotifyMode) ?? 'all')
+  const [testing, setTesting] = useState(false)
+  const [testMsg, setTestMsg] = useState<{ ok: boolean; detail: string } | null>(null)
   const canConfig = profile && (profile.role === 'captain' || profile.role === 'manager')
 
   async function enable() {
     const ok = await requestPushPermission()
     setGranted(ok)
+  }
+
+  async function runTest() {
+    setTesting(true); setTestMsg(null)
+    setTestMsg(await sendTestAlert())
+    setTesting(false)
   }
 
   async function setMode(m: NotifyMode) {
@@ -354,6 +363,22 @@ function AlertsTab() {
           {granted ? 'Notifications enabled ✓' : 'Enable notifications on this device'}
         </button>
       )}
+
+      {configured && canConfig && (
+        <>
+          <button className="btn btn-secondary btn-block" onClick={runTest} disabled={testing}>
+            {testing ? 'Sending…' : 'Send a test alert'}
+          </button>
+          {testMsg && (
+            <div style={{ padding: '11px 14px', borderRadius: 12, fontSize: 13.5, lineHeight: 1.5,
+              background: testMsg.ok ? 'var(--color-success-dim)' : 'var(--color-warning-dim)',
+              color: testMsg.ok ? 'var(--color-success)' : 'var(--color-warning)' }}>
+              {testMsg.detail}
+            </div>
+          )}
+        </>
+      )}
+
       <p style={{ fontSize: 12.5, color: 'var(--color-text-tertiary)', lineHeight: 1.5, textAlign: 'center' }}>
         On iPhone, add ShipShape to your Home Screen first (Install tab), then enable.
       </p>

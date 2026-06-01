@@ -21,20 +21,29 @@ export default function Stock() {
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
+  const [category, setCategory] = useState<string>('all')
   const [selected, setSelected] = useState<Item | null>(null)
   const [editing, setEditing] = useState<Item | null>(null)
   const [creating, setCreating] = useState(false)
+
+  // Categories present in the stock (for the filter chips)
+  const categoryList = useMemo(() => {
+    const set = new Set<string>()
+    for (const i of items) set.add(i.category?.name ?? 'Uncategorised')
+    return [...set].sort((a, b) => a.localeCompare(b))
+  }, [items])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
     return items.filter(i => {
       if (q && !i.name.toLowerCase().includes(q)) return false
+      if (category !== 'all' && (i.category?.name ?? 'Uncategorised') !== category) return false
       const s = stockStatus(i)
       if (filter === 'low') return s === 'low'
       if (filter === 'out') return s === 'out'
       return true
     })
-  }, [items, search, filter])
+  }, [items, search, filter, category])
 
   // Group by category name
   const groups = useMemo(() => {
@@ -64,11 +73,21 @@ export default function Stock() {
           <Search size={17} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-tertiary)' }} />
           <input className="input" style={{ paddingLeft: 40 }} placeholder="Search items…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div className="segmented" style={{ marginBottom: 8 }}>
+        <div className="segmented" style={{ marginBottom: 10 }}>
           <button data-active={filter === 'all'} onClick={() => setFilter('all')}>All</button>
           <button data-active={filter === 'low'} onClick={() => setFilter('low')}>Low</button>
           <button data-active={filter === 'out'} onClick={() => setFilter('out')}>Out</button>
         </div>
+
+        {/* Category filter chips — horizontal scroll */}
+        {categoryList.length > 1 && (
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 2, scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
+            <Chip label="All" active={category === 'all'} onClick={() => setCategory('all')} />
+            {categoryList.map(c => (
+              <Chip key={c} label={c} active={category === c} onClick={() => setCategory(c)} />
+            ))}
+          </div>
+        )}
       </div>
 
       {isLoading ? (
@@ -122,5 +141,24 @@ export default function Stock() {
       <ItemFormSheet open={creating} onClose={() => setCreating(false)} />
       <ItemFormSheet open={!!editing} onClose={() => setEditing(null)} item={editing} />
     </>
+  )
+}
+
+function Chip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        flexShrink: 0, padding: '7px 15px', borderRadius: 99, border: 'none', cursor: 'pointer',
+        fontSize: 13.5, fontWeight: 600, whiteSpace: 'nowrap', letterSpacing: '-0.01em',
+        background: active ? 'var(--color-accent)' : 'var(--color-surface)',
+        color: active ? 'var(--color-on-accent)' : 'var(--color-text-secondary)',
+        boxShadow: active ? 'none' : '0 1px 2px rgba(0,0,0,0.06)',
+        transition: 'background 0.15s, color 0.15s',
+        WebkitTapHighlightColor: 'transparent',
+      }}
+    >
+      {label}
+    </button>
   )
 }

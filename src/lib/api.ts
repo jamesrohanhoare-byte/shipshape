@@ -26,3 +26,21 @@ export async function notifyUsage(itemId: string, usedQty: number): Promise<void
     console.warn('usage push failed (non-blocking):', err)
   }
 }
+
+interface TestResult { ok: boolean; detail: string }
+interface OneSignalResult { body?: { recipients?: number; errors?: unknown } }
+
+/** Send a test push and report exactly what happened (diagnostic + Settings feature). */
+export async function sendTestAlert(): Promise<TestResult> {
+  const { data, error } = await supabase.functions.invoke('notify-low-stock', { body: { test: true } })
+  if (error) {
+    const msg = (data as { error?: string } | null)?.error
+    return { ok: false, detail: msg || error.message }
+  }
+  const d = data as { ok?: boolean; error?: string; results?: OneSignalResult[] }
+  if (!d?.ok) return { ok: false, detail: d?.error ?? 'Unknown error' }
+  const recipients = (d.results ?? []).reduce((sum, r) => sum + (r.body?.recipients ?? 0), 0)
+  return recipients > 0
+    ? { ok: true, detail: `Sent to ${recipients} device${recipients === 1 ? '' : 's'} ✅` }
+    : { ok: false, detail: 'Reached OneSignal, but 0 devices matched. Enable notifications on a device (and make sure it stays subscribed) first.' }
+}

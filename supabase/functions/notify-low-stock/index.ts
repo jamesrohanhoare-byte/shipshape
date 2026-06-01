@@ -1,8 +1,9 @@
 // Supabase Edge Function: notify-low-stock
-// Sends a OneSignal push to the captain(s) + manager(s) of a boat when an item
-// crosses its par level. Called by the client right after a deduct that crosses par.
-// The OneSignal REST key stays server-side here.
-// Deploy: supabase functions deploy notify-low-stock
+// Sends a OneSignal push to the captain(s) + manager(s) of a boat.
+// - Normal: called after a deduction; respects boats.notify_mode (all|low|off),
+//   escalates the message when stock crosses par.
+// - Test mode ({ test: true }): sends a "Test alert" and returns OneSignal's raw
+//   response so the Settings button can show exactly what happened.
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
 const cors = {
@@ -15,93 +16,90 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
-    const authHeader = req.headers.get('Authorization') ?? ''
-    const jwt = authHeader.replace('Bearer ', '')
-    if (!jwt) return json({ error: 'Missing auth' }, 401)
+    const jwt = (req.headers.get('Authorization') ?? '').replace('Bearer ', '')
+    if (!jwt) return json({ ok: false, error: 'Missing auth' }, 401)
 
     const url = Deno.env.get('SUPABASE_URL')!
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const appId = Deno.env.get('ONESIGNAL_APP_ID')
     const restKey = Deno.env.get('ONESIGNAL_REST_API_KEY')
-
     const admin = createClient(url, serviceKey, { auth: { persistSession: false } })
 
-    // Verify caller and derive their boat (never trust a client-supplied boat_id)
     const { data: userData } = await admin.auth.getUser(jwt)
-    if (!userData?.user) return json({ error: 'Invalid token' }, 401)
+    if (!userData?.user) return json({ ok: false, error: 'Invalid token' }, 401)
     const { data: caller } = await admin
       .from('profiles').select('boat_id, full_name').eq('id', userData.user.id).single()
-    if (!caller) return json({ error: 'No profile' }, 403)
+    if (!caller) return json({ ok: false, error: 'No profile' }, 403)
 
-    const body = await req.json()
+    if (!appId || !restKey) {
+      return json({ ok: false, error: 'OneSignal keys are not set on the server' })
+    }
+    const authHeader = restKey.startsWith('os_v2_') ? `Key ${restKey}` : `Basic ${restKey}`
+
+    // Send one targeted push per role (boat_id AND role). Separate sends because
+    // OneSignal evaluates filters left-to-right with no grouping.
+    async function sendToRoles(heading: string, message: string) {
+      const results: unknown[] = []
+      for (const role of ['captain', 'manager']) {
+        const r = await fetch('https://api.onesignal.com/notifications', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+          body: JSON.stringify({
+            app_id: appId,
+            headings: { en: heading },
+            contents: { en: message },
+            filters: [
+              { field: 'tag', key: 'boat_id', relation: '=', value: caller!.boat_id },
+              { operator: 'AND' },
+              { field: 'tag', key: 'role', relation: '=', value: role },
+            ],
+          }),
+        })
+        results.push({ role, status: r.status, body: await r.json() })
+      }
+      return results
+    }
+
+    const body = await req.json().catch(() => ({}))
+
+    // ── Test mode ──────────────────────────────────────────────
+    if (body.test === true) {
+      const results = await sendToRoles('Test alert ✅', 'Notifications are working on this boat.')
+      return json({ ok: true, test: true, results })
+    }
+
+    // ── Normal usage notification ──────────────────────────────
     const itemId = String(body.item_id ?? '')
     const usedQty = Number(body.used_qty ?? 0)
-    if (!itemId) return json({ error: 'item_id required' }, 400)
+    if (!itemId) return json({ ok: false, error: 'item_id required' }, 400)
 
-    // Confirm the item belongs to the caller's boat
     const { data: item } = await admin
       .from('items')
       .select('name, current_quantity, par_level, boat_id, units(abbreviation)')
       .eq('id', itemId).eq('boat_id', caller.boat_id).single()
-    if (!item) return json({ error: 'Item not found' }, 404)
-
-    if (!appId || !restKey) {
-      // Push not configured — succeed quietly so the app flow isn't blocked
-      return json({ ok: true, skipped: 'push not configured' })
-    }
+    if (!item) return json({ ok: false, error: 'Item not found' }, 404)
 
     const unit = (item as { units?: { abbreviation?: string } }).units?.abbreviation ?? ''
     const qty = Number(item.current_quantity)
     const par = Number(item.par_level)
     const low = qty <= par
 
-    // Respect the boat's notification preference (all | low | off)
-    const { data: boatRow } = await admin
-      .from('boats').select('notify_mode').eq('id', caller.boat_id).single()
+    const { data: boatRow } = await admin.from('boats').select('notify_mode').eq('id', caller.boat_id).single()
     const mode = (boatRow as { notify_mode?: string } | null)?.notify_mode ?? 'all'
     if (mode === 'off') return json({ ok: true, skipped: 'notifications off' })
     if (mode === 'low' && !low) return json({ ok: true, skipped: 'low-only mode, above par' })
 
     const who = (caller as { full_name?: string }).full_name || 'A crew member'
     const usedTxt = usedQty > 0 ? `${who} used ${usedQty} ${unit}`.trim() : `${who} logged usage`
-
-    // Notify on every usage; escalate the heading/tail when it crosses par
     let heading = 'Stock used'
     let tail = `${qty} ${unit} left`.trim()
     if (qty <= 0) { heading = '❗ Out of stock'; tail = `${item.name} is finished — on the shopping list` }
     else if (qty <= par) { heading = '⚠️ Now low'; tail = `${qty} ${unit} left — added to shopping list`.trim() }
 
-    const message = `${item.name}: ${usedTxt}. ${tail}.`
-
-    // New-format keys (os_v2_...) use `Key` auth on api.onesignal.com; legacy
-    // keys use `Basic`. Auto-detect so either works.
-    const authHeader = restKey.startsWith('os_v2_') ? `Key ${restKey}` : `Basic ${restKey}`
-
-    // One targeted send per role. Each filter is (boat_id AND role) — kept as
-    // separate requests because OneSignal evaluates filters left-to-right with no
-    // grouping, so a combined OR would leak to other boats.
-    const statuses: number[] = []
-    for (const role of ['captain', 'manager']) {
-      const r = await fetch('https://api.onesignal.com/notifications', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: authHeader },
-        body: JSON.stringify({
-          app_id: appId,
-          headings: { en: heading },
-          contents: { en: message },
-          filters: [
-            { field: 'tag', key: 'boat_id', relation: '=', value: caller.boat_id },
-            { operator: 'AND' },
-            { field: 'tag', key: 'role', relation: '=', value: role },
-          ],
-        }),
-      })
-      statuses.push(r.status)
-    }
-
-    return json({ ok: true, statuses })
+    const results = await sendToRoles(heading, `${item.name}: ${usedTxt}. ${tail}.`)
+    return json({ ok: true, results })
   } catch (e) {
-    return json({ error: String(e) }, 500)
+    return json({ ok: false, error: String(e) }, 500)
   }
 })
 
