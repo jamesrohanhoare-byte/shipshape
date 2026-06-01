@@ -1,3 +1,3 @@
 // Bumped on each release so we always know which build is live.
 // (Shown as a badge in Settings + the More sheet.)
-export const APP_VERSION = '1.6.0'
+export const APP_VERSION = '1.7.0'
