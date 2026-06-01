@@ -3,10 +3,11 @@ import { Home, Package, ShoppingCart, ListChecks, MoreHorizontal } from 'lucide-
 import { useState } from 'react'
 import MoreSheet from './MoreSheet'
 
+// Order puts Home dead-centre (TikTok-style): Shopping · Stock · Home · Tasks · More
 const tabs = [
-  { to: '/',         icon: Home,         label: 'Home', exact: true },
-  { to: '/stock',    icon: Package,      label: 'Stock' },
   { to: '/shopping', icon: ShoppingCart, label: 'Shopping' },
+  { to: '/stock',    icon: Package,      label: 'Stock' },
+  { to: '/',         icon: Home,         label: 'Home', exact: true },
   { to: '/tasks',    icon: ListChecks,   label: 'Tasks' },
 ]
 

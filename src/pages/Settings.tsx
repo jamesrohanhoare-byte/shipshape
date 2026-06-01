@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -13,7 +13,7 @@ import { useUnits, useCategories } from '@/hooks/useInventory'
 import { canEditBoatSettings, canManageCrew } from '@/lib/permissions'
 import { applyBranding, cacheBranding, type ThemeMode } from '@/lib/theme'
 import { usePWAInstall } from '@/hooks/usePWAInstall'
-import { requestPushPermission, pushConfigured } from '@/lib/push'
+import { requestPushPermission, pushConfigured, pushPermissionGranted } from '@/lib/push'
 import { sendTestAlert } from '@/lib/api'
 import SettingsDataTab from '@/components/SettingsDataTab'
 import { APP_VERSION } from '@/lib/version'
@@ -326,6 +326,8 @@ function AlertsTab() {
   const { profile, boat, refresh } = useAuth()
   const configured = pushConfigured()
   const [granted, setGranted] = useState<boolean | null>(null)
+  // Reflect the device's actual permission on mount so it doesn't appear to "reset".
+  useEffect(() => { setGranted(pushPermissionGranted()) }, [])
   const [notifyMode, setNotifyMode] = useState<NotifyMode>((boat?.notify_mode as NotifyMode) ?? 'all')
   const [testing, setTesting] = useState(false)
   const [testMsg, setTestMsg] = useState<{ ok: boolean; detail: string } | null>(null)
