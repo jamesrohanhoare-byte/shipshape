@@ -127,7 +127,7 @@ export default function ItemFormSheet({ open, onClose, item }: { open: boolean; 
 
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1 }}>
-            <label className="label">Price / unit (R)</label>
+            <label className="label">Price / unit ({boat?.currency ?? 'ZAR'})</label>
             <input className="input tabnum" type="number" inputMode="decimal" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" />
           </div>
           <div style={{ flex: 1 }}>
