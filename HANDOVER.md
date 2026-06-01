@@ -1,7 +1,8 @@
 # ShipShape — Project Handover
 
 > Paste this whole file into a new chat to resume with full context.
-> Last updated: 2026-06-01 · Current version: **v1.7.0** (live).
+> Last updated: 2026-06-02 · Current version: **v1.11.0** (live).
+> Recent: v1.8 currency + financial-toggle (00009) · v1.9 settings-reset fix + Home-centred nav · v1.10 notifications (00010 shopping-dismiss; notify-task + daily-task-digest fns; pg_cron digest, CRON_SECRET) · v1.10.1 segmented-control centring fix · v1.11 Crew Hours + MLC compliance (00011 time_logs). Migrations now 00001–00011. Deploy NOTE: Vercel now AUTO-deploys on push to main (stage on a branch until backend is ready). Deploy guide for the notifications batch: docs/notifications-deploy.md.
 
 ---
 
