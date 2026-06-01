@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Plus, ListChecks, Circle, CircleDot, CheckCi
 import PageHeader from '@/components/PageHeader'
 import EmptyState from '@/components/EmptyState'
 import TaskSheet from '@/components/TaskSheet'
+import Sheet from '@/components/Sheet'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { useCrew } from '@/hooks/useCrew'
@@ -31,6 +32,7 @@ export default function Tasks() {
   const [shiftFilter, setShiftFilter] = useState<ShiftFilter>('all')
   const [editing, setEditing] = useState<Task | null>(null)
   const [creating, setCreating] = useState(false)
+  const [recurringAction, setRecurringAction] = useState<DisplayTask | null>(null)
 
   const dateKey = toDateStr(selected)
   const todayKey = toDateStr(today())
@@ -129,6 +131,27 @@ export default function Tasks() {
     qc.invalidateQueries({ queryKey: ['tasks_dots'] })
   }
 
+  // ── Recurring: skip just this day, or delete the whole series ──
+  async function skipOccurrence(task: DisplayTask) {
+    const occ = task._occurrence ?? dateKey
+    qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.filter(t => !(t.id === task.id && t._occurrence === occ)))
+    if (task._completionId) {
+      await supabase.from('task_completions').update({ skipped: true, done: false }).eq('id', task._completionId)
+    } else {
+      await supabase.from('task_completions').insert({ boat_id: task.boat_id, task_id: task.id, occurrence_date: occ, done: false, skipped: true })
+    }
+    setRecurringAction(null)
+  }
+
+  async function deleteSeries(task: DisplayTask) {
+    qc.setQueryData<DisplayTask[]>(['tasks_view', dateKey], prev => prev?.filter(t => t.id !== task.id))
+    const { error } = await supabase.from('tasks').delete().eq('id', task.id)
+    if (error) qc.invalidateQueries({ queryKey: ['tasks_view'] })
+    qc.invalidateQueries({ queryKey: ['recurring_templates'] })
+    qc.invalidateQueries({ queryKey: ['tasks_dots'] })
+    setRecurringAction(null)
+  }
+
   const StatusIcon = (t: DisplayTask) =>
     isDone(t) ? <CheckCircle2 size={22} style={{ color: 'var(--color-success)' }} />
     : (!t.is_recurring && t.status === 'in_progress') ? <CircleDot size={22} style={{ color: 'var(--color-accent)' }} />
@@ -206,7 +229,7 @@ export default function Tasks() {
                 <button onClick={() => cycle(task)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 1, flexShrink: 0 }} aria-label="Toggle status">
                   {StatusIcon(task)}
                 </button>
-                <div style={{ flex: 1, minWidth: 0, cursor: canManage && !task.is_recurring ? 'pointer' : 'default' }} onClick={() => canManage && !task.is_recurring && setEditing(task)}>
+                <div style={{ flex: 1, minWidth: 0, cursor: canManage ? 'pointer' : 'default' }} onClick={() => { if (!canManage) return; if (task.is_recurring) setRecurringAction(task); else setEditing(task) }}>
                   <div style={{ fontWeight: 600, textDecoration: isDone(task) ? 'line-through' : 'none', color: isDone(task) ? 'var(--color-text-tertiary)' : 'var(--color-text-primary)' }}>
                     {task.title}
                   </div>
@@ -230,6 +253,32 @@ export default function Tasks() {
 
       <TaskSheet open={creating} onClose={() => setCreating(false)} defaultDate={dateKey} />
       <TaskSheet open={!!editing} onClose={() => setEditing(null)} task={editing} />
+
+      {/* Recurring task: skip this day or delete the whole series */}
+      <Sheet open={!!recurringAction} onClose={() => setRecurringAction(null)} title="Recurring task" maxHeight="60vh">
+        {recurringAction && (
+          <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ fontSize: 14.5, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+              “{recurringAction.title}” repeats {recurrenceLabel(recurringAction.recurrence_type).toLowerCase()}.
+            </div>
+            <button
+              onClick={() => skipOccurrence(recurringAction)}
+              style={{ width: '100%', padding: '15px 0', borderRadius: 14, border: 'none', cursor: 'pointer', fontSize: 15.5, fontWeight: 600, background: 'var(--color-surface)', color: 'var(--color-text-primary)', boxShadow: '0 1px 3px rgba(0,0,0,.06)' }}>
+              Skip {formatDate(recurringAction._occurrence ?? dateKey, 'EEE d MMM')} only
+            </button>
+            <button
+              onClick={() => deleteSeries(recurringAction)}
+              style={{ width: '100%', padding: '15px 0', borderRadius: 14, border: 'none', cursor: 'pointer', fontSize: 15.5, fontWeight: 600, background: 'var(--color-danger-dim)', color: 'var(--color-danger)' }}>
+              Delete entire series
+            </button>
+            <button
+              onClick={() => setRecurringAction(null)}
+              style={{ width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 500, background: 'transparent', color: 'var(--color-text-secondary)' }}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </Sheet>
     </>
   )
 }
