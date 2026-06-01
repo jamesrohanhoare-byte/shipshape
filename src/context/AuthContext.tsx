@@ -40,6 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let active = true
 
+    // Hard safety net: never pulse on the splash for more than 6s, no matter what
+    // stalls the session check (a blocking browser extension, a wedged request,
+    // a flaky network). The app continues; auth state catches up if/when it resolves.
+    const safety = setTimeout(() => { if (active) setLoading(false) }, 6000)
+
     ;(async () => {
       try {
         const { data } = await supabase.auth.getSession()
@@ -50,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Never trap the user on the splash screen if session restore fails
         console.warn('Session restore failed:', err)
       } finally {
-        if (active) setLoading(false)
+        if (active) { clearTimeout(safety); setLoading(false) }
       }
     })()
 
@@ -67,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })
 
-    return () => { active = false; sub.subscription.unsubscribe() }
+    return () => { active = false; clearTimeout(safety); sub.subscription.unsubscribe() }
   }, [loadContext])
 
   const refresh = useCallback(async () => { await loadContext() }, [loadContext])
