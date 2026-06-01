@@ -1,7 +1,7 @@
 # ShipShape — Project Handover
 
 > Paste this whole file into a new chat to resume with full context.
-> Last updated: 2026-06-01 · Current version: **v1.5.0** (live).
+> Last updated: 2026-06-01 · Current version: **v1.6.0** (live).
 
 ---
 
@@ -119,7 +119,8 @@ The client bundle only contains **public** identifiers (Supabase URL, anon key, 
 - `categories` — id, boat_id, name.
 - `items` — id, boat_id, name, category_id, unit_id, price_per_unit, par_level, **current_quantity** (cached), location, photo_url.
 - `stock_movements` — id, boat_id, item_id, user_id, change_qty (signed), type (add/deduct/adjust/stocktake), note. **Immutable ledger.**
-- `tasks` — id, boat_id, title, description, assigned_to, status (open/in_progress/done), due_date.
+- `tasks` — id, boat_id, title, description, assigned_to, status (open/in_progress/done), due_date, **shift (day/night), is_recurring, recurrence_type (daily/weekly/monthly), recurrence_start_date** (v1.6.0).
+- `task_completions` — **(v1.6.0)** boat-scoped per-occurrence state for recurring tasks: id, boat_id, task_id, occurrence_date, done, skipped. Unique (task_id, occurrence_date). One-off tasks ignore this table (use tasks.status).
 - `sleep_logs` — **user-scoped** (user_id = auth.uid()): log_date, sleep_start, sleep_end, hours, note.
 
 ### Key DB functions
@@ -156,6 +157,9 @@ Every table: `using (boat_id = get_user_boat_id())` + matching `with check`. Wri
 - **v1.3.0–1.3.5** — onboarding walkthrough; then the hang-fix saga: network-first SW (1.3.2), 6s auth timeout (1.3.4), **no-op auth lock (1.3.5)**.
 - **v1.4.0** — onboarding teaches daily loop + unit-of-measure; inline Settings hints. Also: **deckhand-deduction trigger fix** (security definer) + **verify_jwt=false** on functions.
 - **v1.5.0** — "Send a test alert" diagnostic button + Stock category filter.
+- **v1.6.0** — **Tasks redesign** (BlitzBooks-style day engine + crew/status model): horizontal day strip with unfinished-day dots; status-segmented board (To do/Doing/Done, "Variant A"); Day/Night-watch **shift filter** (night watch is a task flag, not a status); **recurring tasks** (daily/weekly/monthly via `task_completions`, per-occurrence done); **carry-over** of unfinished one-off tasks to today+future, badged "From <date>"; recurring delete sheet (skip this day / delete series). Migration `00007` (shift + recurrence cols on `tasks`, new boat-scoped `task_completions` table). New files: `src/lib/taskScheduling.ts`; rewrote `src/pages/Tasks.tsx` + `src/components/TaskSheet.tsx`. `setup_all.sql` now generated (00001–00007).
+
+> **Tasks v1.6.0 — known follow-ups / notes:** recurring tasks are **tick-done only** (no Doing state) by design; carry-over shows on today **and future** days (kept, per James); **notifications on task-done are NOT built** (deferred — was the agreed next feature after the redesign). Sketch + plan: `.planning/sketches/001-tasks-day-board/`, `docs/superpowers/plans/2026-06-01-tasks-day-scheduling.md`.
 
 ---
 
