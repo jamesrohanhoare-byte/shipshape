@@ -17,3 +17,4 @@ not a status. Notifications deferred to a later pass.
 | # | Name | Design Question | Winner | Tags |
 |---|------|----------------|--------|------|
 | 001 | tasks-day-board | One status at a time (filter) vs whole-day board (stacked)? | **A — Filtered** | tasks, layout, day-strip, night-watch |
+| 002 | home-command-centre | Home attention layout — hero card vs 2x2 tile grid? | TBD | home, dashboard, layout |
