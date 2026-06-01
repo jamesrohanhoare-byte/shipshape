@@ -167,6 +167,8 @@ function BoatTab() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {err && <ErrorBanner msg={err} onClose={() => setErr(null)} />}
 
+      <div className="section-header" style={{ padding: '0 4px' }}>Branding</div>
+
       {/* Logo + name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <label style={{ cursor: 'pointer', flexShrink: 0 }}>
@@ -215,6 +217,8 @@ function BoatTab() {
         </div>
       </div>
 
+      <div className="section-header" style={{ padding: '6px 4px 0' }}>Money &amp; display</div>
+
       {/* Currency */}
       <div>
         <label className="label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Coins size={14} /> Currency</label>
@@ -236,6 +240,8 @@ function BoatTab() {
           <span style={{ position: 'absolute', top: 3, left: showFin ? 21 : 3, width: 22, height: 22, borderRadius: '50%', background: '#fff', transition: 'left .15s', boxShadow: '0 1px 3px rgba(0,0,0,.25)' }} />
         </button>
       </div>
+
+      <div className="section-header" style={{ padding: '6px 4px 0' }}>Lists</div>
 
       <ManagedList kind="units" hasAbbr title="Units of measure" placeholder="e.g. Bottle" abbrPlaceholder="btl"
         hint="How you count an item — a count (Bottle, Each, Case, Roll) or a measure (Litre, kg, ml for bulk). The short code shows next to quantities." />

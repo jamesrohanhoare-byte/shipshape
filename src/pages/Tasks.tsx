@@ -226,6 +226,11 @@ export default function Tasks() {
         />
       ) : (
         <div style={{ padding: '8px 16px 16px' }}>
+          {statusFilter !== 'done' && (
+            <div style={{ fontSize: 12, color: 'var(--color-text-tertiary)', textAlign: 'center', padding: '0 8px 10px', lineHeight: 1.4 }}>
+              Tap the circle to move a task <b>To&nbsp;do → Doing → Done</b>
+            </div>
+          )}
           <div className="list-group">
             {filtered.map(task => (
               <div key={`${task.id}-${task._occurrence ?? 'one'}`} className="list-row" style={{ alignItems: 'flex-start', paddingTop: 13, paddingBottom: 13, borderLeft: task._carriedOver ? '3px solid var(--color-warning, #E0922F)' : task.shift === 'night' ? '3px solid var(--color-accent)' : '3px solid transparent' }}>
