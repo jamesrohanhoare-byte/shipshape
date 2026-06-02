@@ -282,7 +282,9 @@ select.input {
   --color-text-secondary: rgba(235,235,245,0.62);
   --color-text-tertiary:  rgba(235,235,245,0.40);
   --color-text-faint:     rgba(235,235,245,0.26);
-  --color-frosted: rgba(28,28,30,0.74);
+  /* More opaque in dark so the nav/header bars read as distinct bars over the
+     near-black page instead of blending in ("black on black"). */
+  --color-frosted: rgba(28,28,30,0.92);
 }
 [data-theme="dark"] .card,
 [data-theme="dark"] .card-sm,

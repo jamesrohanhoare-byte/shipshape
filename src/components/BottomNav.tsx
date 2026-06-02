@@ -39,7 +39,7 @@ export default function BottomNav() {
               style={{
                 flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: 4, padding: '9px 0 7px',
-                color: active ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+                color: active ? 'var(--color-accent)' : 'var(--color-text-secondary)',
                 textDecoration: 'none', fontSize: 10.5, fontWeight: 600, letterSpacing: '-0.01em',
                 transition: 'color 0.15s',
                 WebkitTapHighlightColor: 'transparent',
@@ -56,7 +56,7 @@ export default function BottomNav() {
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
             gap: 4, padding: '9px 0 7px',
-            color: isMore || moreOpen ? 'var(--color-accent)' : 'var(--color-text-tertiary)',
+            color: isMore || moreOpen ? 'var(--color-accent)' : 'var(--color-text-secondary)',
             background: 'none', border: 'none', cursor: 'pointer',
             fontSize: 10.5, fontWeight: 600, letterSpacing: '-0.01em',
             WebkitTapHighlightColor: 'transparent',

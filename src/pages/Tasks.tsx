@@ -197,7 +197,7 @@ export default function Tasks() {
           <button key={v} onClick={() => setShiftFilter(v)} className="chip" data-active={shiftFilter === v}
             style={{ fontSize: 13, fontWeight: 600, padding: '6px 14px', borderRadius: 999, cursor: 'pointer', border: '1px solid var(--color-divider)',
               background: shiftFilter === v ? (v === 'night' ? 'var(--color-accent)' : 'var(--color-text-primary)') : 'var(--color-surface)',
-              color: shiftFilter === v ? '#fff' : 'var(--color-text-secondary)' }}>
+              color: shiftFilter === v ? (v === 'night' ? '#fff' : 'var(--color-base)') : 'var(--color-text-secondary)' }}>
             {label}
           </button>
         ))}
