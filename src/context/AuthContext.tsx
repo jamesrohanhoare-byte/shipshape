@@ -59,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })()
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       if (!active) return
       setSession(sess)
       if (event === 'SIGNED_OUT') {
@@ -67,8 +67,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setBoat(null)
         return
       }
-      if (sess && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
-        await loadContext()
+      // CRITICAL: never call a supabase method synchronously inside this callback.
+      // It fires while the auth client holds its internal lock; an awaited query
+      // (get_my_context) then waits on a lock the callback won't release until it
+      // returns — a deadlock. That's exactly why a FRESH sign-in hung while a
+      // reload worked (reload loads context via the boot IIFE, outside this
+      // callback). setTimeout lets the callback return and free the lock first.
+      // INITIAL_SESSION is handled by the boot IIFE above, so we skip it here.
+      if (sess && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        setTimeout(() => { if (active) loadContext() }, 0)
       }
     })
 
