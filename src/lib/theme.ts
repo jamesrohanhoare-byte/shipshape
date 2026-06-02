@@ -15,6 +15,10 @@ function prefersDark(): boolean {
 export function applyThemeMode(mode: ThemeMode | null | undefined) {
   const resolved = mode === 'auto' || !mode ? (prefersDark() ? 'dark' : 'light') : mode
   document.documentElement.setAttribute('data-theme', resolved)
+  // Tell the browser which scheme native controls should use, so the <select>
+  // option popups and date/time pickers render dark instead of a mismatched
+  // light popup floating over the dark app.
+  document.documentElement.style.colorScheme = resolved
   // Keep the browser/PWA chrome colour in step
   const meta = document.querySelector('meta[name="theme-color"]')
   if (meta) meta.setAttribute('content', resolved === 'dark' ? '#000000' : '#F2F2F7')
